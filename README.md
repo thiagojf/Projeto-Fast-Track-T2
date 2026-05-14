@@ -9,6 +9,7 @@ O projeto contempla ingestão, tratamento, modelagem dimensional e disponibiliza
 ---
 
 # Arquitetura do Projeto
+<img width="1536" height="1024" alt="b67c081c-4869-4d12-a1f8-c4032efa7880" src="https://github.com/user-attachments/assets/a74492fb-ed2e-4089-9afc-7dac82a42092" />
 
 ---
 
