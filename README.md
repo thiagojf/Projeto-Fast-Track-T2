@@ -25,7 +25,19 @@ O projeto contempla ingestão, tratamento, modelagem dimensional e disponibiliza
 | Power BI | Consumo analítico |
 
 ---
+# Fontes de Dados / Endpoints
+| Endpoint                           | Finalidade            | Camada |
+| ---------------------------------- | --------------------- | ------ |
+| /deputados                         | Cadastro deputados    | Bronze |
+| /frentes                           | Frentes parlamentares | Bronze |
+| /frentes/{id}/membros              | Membros das frentes   | Bronze |
+| /eventos                           | Eventos legislativos  | Bronze |
+| /eventos/{id}/deputados            | Presença em eventos   | Bronze |
+| /referencias/eventos/codTipoEvento | Tipos de evento       | Bronze |
+| /deputados/{id}/despesas           | CEAP                  | Bronze |
 
+
+---
 # Arquitetura Medalhão
 
 ## Camada Bronze
