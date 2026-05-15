@@ -1,50 +1,57 @@
-# Databricks notebook source
-# Célula 1 — Catálogo
-spark.sql("CREATE CATALOG IF NOT EXISTS desafio_final_T2")
-spark.sql("USE CATALOG desafio_final_T2")
-print("✓ Catálogo desafio_final ativo")
 
-# Célula 2 — Schemas
-for schema in ["bronze", "silver", "gold"]:
-    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema}")
-    print(f"✓ Schema {schema} criado")
+# ============================================================
+# 00_SETUP_INICIAL
+# Projeto Final - Engenharia de Dados
+# Projeto Analítico Legislativo — Câmara dos Deputados
+# ============================================================
 
-# Célula 3 — Volumes
-for schema in ["bronze", "silver", "gold"]:
+# ============================================================
+# 1. CONFIGURAÇÕES
+# ============================================================
+
+CATALOG_NAME = "desafio_final_t2"
+
+SCHEMAS = [
+    "bronze",
+    "silver",
+    "gold"
+]
+
+
+# ============================================================
+# 2. CRIAÇÃO DO CATÁLOGO
+# ============================================================
+
+spark.sql(f"""
+CREATE CATALOG IF NOT EXISTS {CATALOG_NAME}
+""")
+
+
+# ============================================================
+# 3. CRIAÇÃO DOS SCHEMAS
+# ============================================================
+
+for schema in SCHEMAS:
     spark.sql(f"""
-        CREATE VOLUME IF NOT EXISTS desafio_final_T2.{schema}.raw
+    CREATE SCHEMA IF NOT EXISTS {CATALOG_NAME}.{schema}
     """)
-print(f"✓ Volume desafio_final.{schema}.raw criado")
 
-# Célula 4 — Validação
-schemas = spark.sql("SHOW SCHEMAS IN desafio_final_T2/Volumes/desafio_final_t2/bronze/raw_data").collect()
-print("Schemas encontrados:")
-for s in schemas:
-    print(f"  → {s[0]}")
-print("\n✓ Setup concluído. Ambiente pronto para o projeto.")
-
-# COMMAND ----------
 
 # ============================================================
-# CRIAÇÃO VOLUMES (Unity Catalog)
+# 4. VALIDAÇÃO
 # ============================================================
 
-# 
-spark.sql("USE CATALOG desafio_final_T2")
+spark.sql(f"""
+SHOW SCHEMAS IN {CATALOG_NAME}
+""").show(truncate=False)
 
-# Define as camadas e tabelas
-schema = ["bronze", "silver", "gold"]
-tabelas = ["deputados", "votacoes", "votacoes_votos", "despesas", "frentes","eventos"]
 
-# Cria os schemas (camadas)
-for schema in schema:
-    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema}")
-    print(f"✅ Schema criado: {schema}")
-    
-    # Cria um volume para cada tabela dentro da camada
-    for tabela in tabelas:
-        spark.sql(f"""
-            CREATE VOLUME IF NOT EXISTS {schema}.{tabela}
-            COMMENT 'Volume de armazenamento da tabela {tabela} na camada {schema}'
-        """)
-        print(f"📁 Volume criado: {schema}.{tabela}")
+# ============================================================
+# 5. CONTEXTO DO PROJETO
+# ============================================================
+
+spark.sql(f"""
+USE CATALOG {CATALOG_NAME}
+""")
+
+print("Setup inicial concluído com sucesso.")
