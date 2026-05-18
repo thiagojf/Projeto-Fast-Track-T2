@@ -1,5 +1,4 @@
 # Databricks notebook source
-# Databricks notebook source
 # ============================================================
 # SILVER - DIM_EVENTO
 # ============================================================
@@ -144,21 +143,7 @@ df_dim_evento = (
 
 
 # ============================================================
-# 7. VALIDAÇÕES
-# ============================================================
-
-df_dim_evento.printSchema()
-df_dim_evento.show(10, truncate=False)
-
-spark.sql(f"""
-SELECT
-    COUNT(*) AS qtd_eventos_bronze
-FROM {TABELA_ORIGEM}
-""").show()
-
-
-# ============================================================
-# 8. ESCRITA DELTA SILVER
+# 7. ESCRITA DELTA SILVER
 # ============================================================
 
 (
