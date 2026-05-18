@@ -59,11 +59,11 @@ df_evento_orgao = (
 )
 
 # ============================================================
-# 8. ESCRITA DELTA SILVER
+# 4. ESCRITA DELTA SILVER
 # ============================================================
 
 (
-    df_dim_evento.write
+    df_evento_orgao.write
     .format("delta")
     .mode("overwrite")
     .option("overwriteSchema", "true")
