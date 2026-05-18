@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # BRONZE_FRENTES_MEMBROS
 # Camada Bronze | Ingestão RAW API Câmara
