@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # BRONZE_DESPESAS
 # Camada Bronze | Ingestão RAW API Câmara
@@ -197,7 +196,7 @@ spark_df = (
 
 
 # ============================================================
-# 7. CAMPOS DE AUDITORIA
+# 6. CAMPOS DE AUDITORIA
 # ============================================================
 
 spark_df = (
@@ -211,20 +210,8 @@ spark_df = (
     .withColumn("mes_ingestao", F.month(F.current_timestamp()))
 )
 
-
 # ============================================================
-# 8. VALIDAÇÕES
-# ============================================================
-
-print(f"[INFO] Quantidade registros DataFrame: {spark_df.count()}")
-
-spark_df.printSchema()
-
-spark_df.show(5, truncate=False)
-
-
-# ============================================================
-# 9. ESCRITA DELTA BRONZE
+# 7. ESCRITA DELTA BRONZE
 # ============================================================
 
 (
