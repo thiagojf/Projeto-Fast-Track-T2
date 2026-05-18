@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # SILVER - DIM_DATA
 # Tabela calendário reutilizável
@@ -109,19 +108,8 @@ df_dim_data = (
     )
 )
 
-
 # ============================================================
-# 6. VALIDAÇÕES
-# ============================================================
-
-df_dim_data.printSchema()
-df_dim_data.show(10, truncate=False)
-
-print(f"Qtd registros dim_data: {df_dim_data.count()}")
-
-
-# ============================================================
-# 7. ESCRITA DELTA SILVER
+# 6. ESCRITA DELTA SILVER
 # ============================================================
 
 (
@@ -132,21 +120,3 @@ print(f"Qtd registros dim_data: {df_dim_data.count()}")
     .saveAsTable(TABELA_DESTINO)
 )
 
-
-# ============================================================
-# 8. VALIDAÇÃO FINAL
-# ============================================================
-
-spark.sql(f"""
-SELECT
-    COUNT(*) AS qtd_dias,
-    MIN(data) AS menor_data,
-    MAX(data) AS maior_data,
-    SUM(CASE WHEN periodo_eleitoral = true THEN 1 ELSE 0 END) AS qtd_dias_periodo_eleitoral
-FROM {TABELA_DESTINO}
-""").show()
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from desafio_final_t2.silver.dim_data
