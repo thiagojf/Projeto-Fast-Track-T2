@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # SILVER - DIM_DEPUTADO
 # ============================================================
@@ -87,18 +86,7 @@ df_dim_deputado = (
 
 
 # ============================================================
-# 5. VALIDAÇÕES
-# ============================================================
-
-df_dim_deputado.printSchema()
-
-df_dim_deputado.show(10, truncate=False)
-
-print(f"Qtd registros dim_deputado: {df_dim_deputado.count()}")
-
-
-# ============================================================
-# 6. ESCRITA DELTA SILVER
+# 5. ESCRITA DELTA SILVER
 # ============================================================
 
 (
