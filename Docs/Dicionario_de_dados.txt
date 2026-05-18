@@ -1,0 +1,318 @@
+ # gold.comparativo_periodo_eleitoral
+
+| Campo | Tipo ||---|---|| ano | INT |
+| periodo_eleitoral | BOOLEAN |
+| descricao_periodo_eleitoral | STRING |
+| descricao_tipo_evento | STRING |
+| qtd_eventos | LONG |
+| media_eventos_semana | DOUBLE |
+| qtd_orgaos | LONG |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.densidade_eventos_semana
+
+| Campo | Tipo ||---|---|| ano | INT |
+| semana_ano | INT |
+| ano_semana | STRING |
+| qtd_eventos | LONG |
+| possui_evento | BOOLEAN |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.eventos
+
+| Campo | Tipo ||---|---|| sk_evento | INT |
+| nk_evento | LONG |
+| data_evento | DATE |
+| sk_data | INT |
+| sk_tipo_evento | INT |
+| descricao_tipo_evento | STRING |
+| sk_orgao | INT |
+| sigla_orgao | STRING |
+| nome_orgao | STRING |
+| situacao_evento | STRING |
+| descricao_evento | STRING |
+| ano | INT |
+| mes | INT |
+| semana_ano | INT |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.fat_despesas
+
+| Campo | Tipo ||---|---|| sk_deputado | INT |
+| sigla_partido | STRING |
+| sk_fornecedor | INT |
+| sk_categoria_despesa | INT |
+| nk_deputado | LONG |
+| ano | INT |
+| mes | INT |
+| ano_mes | STRING |
+| data_documento | DATE |
+| tipo_documento | STRING |
+| cod_documento | LONG |
+| cod_lote | LONG |
+| parcela | INT |
+| valor_documento | DOUBLE |
+| valor_liquido | DOUBLE |
+| valor_glosa | DOUBLE |
+| url_documento | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.gold_frentes_membros
+
+| Campo | Tipo ||---|---|| sk_frente | INT |
+| sk_deputado | INT |
+| nk_frente | LONG |
+| nk_deputado | LONG |
+| titulo_frente | STRING |
+| id_legislatura | INT |
+| nome_deputado | STRING |
+| sigla_partido | STRING |
+| sigla_uf | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.gold_ihh_frentes
+
+| Campo | Tipo ||---|---|| nk_frente | LONG |
+| titulo_frente | STRING |
+| qtd_deputados_frente | LONG |
+| qtd_partidos | LONG |
+| ihh | DOUBLE |
+| classificacao_diversidade | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.gold_ranking_deputados
+
+| Campo | Tipo ||---|---|| nk_deputado | LONG |
+| nome_deputado | STRING |
+| sigla_partido | STRING |
+| sigla_uf | STRING |
+| qtd_frentes | LONG |
+| frentes_participa | ARRAY |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.taxa_presenca_evento
+
+| Campo | Tipo ||---|---|| nk_deputado | LONG |
+| nome_deputado | STRING |
+| sigla_partido | STRING |
+| sigla_uf | STRING |
+| ano_evento | INT |
+| sk_tipo_evento | INT |
+| nome_tipo_evento | STRING |
+| qtd_eventos_participados | LONG |
+| qtd_total_eventos_tipo | LONG |
+| taxa_participacao | DOUBLE |
+| percentual_taxa_participacao | DOUBLE |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.top_gastos_partido
+
+| Campo | Tipo ||---|---|| ano | INT |
+| mes | INT |
+| ano_mes | STRING |
+| sigla_partido | STRING |
+| qtd_deputados | LONG |
+| qtd_despesas | LONG |
+| valor_total_liquido | DOUBLE |
+| ranking_gasto_partido | INT |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# gold.vw_eventos_futuros
+
+| Campo | Tipo ||---|---|| sk_evento | INT |
+| nk_evento | LONG |
+| data_evento | DATE |
+| sk_data | INT |
+| sk_tipo_evento | INT |
+| descricao_tipo_evento | STRING |
+| sk_orgao | INT |
+| sigla_orgao | STRING |
+| nome_orgao | STRING |
+| situacao_evento | STRING |
+| descricao_evento | STRING |
+| ano | INT |
+| mes | INT |
+| semana_ano | INT |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.bridge_evento_orgao
+
+| Campo | Tipo ||---|---|| sk_evento | INT |
+| sk_orgao | INT |
+| nk_evento | LONG |
+| nk_orgao | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.bridge_frente_deputado
+
+| Campo | Tipo ||---|---|| sk_frente | INT |
+| sk_deputado | INT |
+| nk_frente | LONG |
+| nk_deputado | LONG |
+| nome_deputado | STRING |
+| sigla_partido | STRING |
+| sigla_uf | STRING |
+| id_legislatura | INT |
+| bronze_ingested_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.despesas
+
+| Campo | Tipo ||---|---|| nk_deputado | INT |
+| ano | INT |
+| mes | INT |
+| ano_mes | STRING |
+| tipo_despesa | STRING |
+| cod_documento | LONG |
+| tipo_documento | STRING |
+| cod_tipo_documento | INT |
+| data_documento | DATE |
+| num_documento | STRING |
+| valor_documento | DOUBLE |
+| valor_liquido | DOUBLE |
+| valor_glosa | DOUBLE |
+| nome_fornecedor | STRING |
+| cnpj_cpf_fornecedor | STRING |
+| cnpj_cpf_fornecedor_limpo | STRING |
+| url_documento | STRING |
+| cod_lote | LONG |
+| parcela | INT |
+| data_despesa | DATE |
+| ano_despesa | INT |
+| mes_despesa | INT |
+| semana_despesa | INT |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_categoria_despesa
+
+| Campo | Tipo ||---|---|| sk_categoria_despesa | INT |
+| nk_categoria_despesa | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_data
+
+| Campo | Tipo ||---|---|| sk_data | INT |
+| data | DATE |
+| ano | INT |
+| mes | INT |
+| nome_mes | STRING |
+| trimestre | INT |
+| ano_mes | STRING |
+| semana_ano | INT |
+| dia_mes | INT |
+| dia_semana | INT |
+| nome_dia_semana | STRING |
+| is_fim_semana | BOOLEAN |
+| periodo_eleitoral | BOOLEAN |
+| descricao_periodo_eleitoral | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_deputado
+
+| Campo | Tipo ||---|---|| sk_deputado | INT |
+| nk_deputado | LONG |
+| uri_deputado | STRING |
+| nome_deputado | STRING |
+| sigla_partido | STRING |
+| id_partido | LONG |
+| sigla_uf | STRING |
+| id_legislatura | INT |
+| url_foto | STRING |
+| email | STRING |
+| valid_from | DATE |
+| valid_to | DATE |
+| is_current | BOOLEAN |
+| bronze_ingested_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_evento
+
+| Campo | Tipo ||---|---|| sk_evento | INT |
+| nk_evento | LONG |
+| uri_evento | STRING |
+| sk_tipo_evento | INT |
+| cod_tipo_evento | LONG |
+| data_hora_inicio | TIMESTAMP |
+| data_hora_fim | TIMESTAMP |
+| data_evento | DATE |
+| ano_evento | INT |
+| mes_evento | INT |
+| semana_evento | INT |
+| situacao_evento | STRING |
+| descricao_tipo_evento | STRING |
+| descricao_evento | STRING |
+| local_externo | STRING |
+| local_camara_nome | STRING |
+| local_camara_predio | STRING |
+| local_camara_sala | STRING |
+| local_camara_andar | STRING |
+| url_registro | STRING |
+| orgaos | ARRAY |
+| raw_payload | STRING |
+| bronze_ingested_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_fornecedor
+
+| Campo | Tipo ||---|---|| sk_fornecedor | INT |
+| nk_fornecedor | STRING |
+| cnpj_cpf_fornecedor | STRING |
+| cnpj_cpf_fornecedor_limpo | STRING |
+| nome_fornecedor | STRING |
+| tipo_pessoa | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_frente
+
+| Campo | Tipo ||---|---|| sk_frente | INT |
+| nk_frente | LONG |
+| id_legislatura | INT |
+| titulo_frente | STRING |
+| uri_frente | STRING |
+| bronze_ingested_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_orgao
+
+| Campo | Tipo ||---|---|| sk_orgao | INT |
+| nk_orgao | STRING |
+| sigla_orgao | STRING |
+| nome_orgao | STRING |
+| apelido_orgao | STRING |
+| cod_tipo_orgao | STRING |
+| tipo_orgao | STRING |
+| nome_publicacao | STRING |
+| nome_resumido | STRING |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
+
+# silver.dim_tipo_evento
+
+| Campo | Tipo ||---|---|| sk_tipo_evento | INT |
+| cod_tipo_evento | LONG |
+| sigla_tipo_evento | STRING |
+| nome_tipo_evento | STRING |
+| descricao_tipo_evento | STRING |
+| raw_payload | STRING |
+| bronze_ingested_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+| pipeline_version | STRING |
