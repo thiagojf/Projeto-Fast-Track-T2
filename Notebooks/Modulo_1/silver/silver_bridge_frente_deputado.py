@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # SILVER - BRIDGE_FRENTE_DEPUTADO
 # deputado ↔ frente é um relacionamento N:N apra evitar muitos-para-muitos precisa de tabela ponte (bridge table)
@@ -92,15 +91,7 @@ df_bridge = (
 )
 
 # ============================================================
-# 6. VALIDAÇÕES
-# ============================================================
-
-df_bridge.printSchema()
-df_bridge.show(10, truncate=False)
-print(f"Qtd registros bridge_frente_deputado: {df_bridge.count()}")
-
-# ============================================================
-# 7. ESCRITA DELTA SILVER
+# 6. ESCRITA DELTA SILVER
 # ============================================================
 
 (
