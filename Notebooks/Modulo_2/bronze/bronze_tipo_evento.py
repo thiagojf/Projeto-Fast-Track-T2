@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # BRONZE_TIPO_EVENTO
 # Camada Bronze | Referência de tipos de eventos
@@ -9,7 +8,6 @@ import requests
 import time
 import uuid
 import json
-
 from pyspark.sql import functions as F
 
 
@@ -141,20 +139,8 @@ spark_df = (
     .withColumn("mes_ingestao", F.month(F.current_timestamp()))
 )
 
-
 # ============================================================
-# 6. VALIDAÇÕES
-# ============================================================
-
-print(f"[INFO] Quantidade registros DataFrame: {spark_df.count()}")
-
-spark_df.printSchema()
-
-spark_df.show(20, truncate=False)
-
-
-# ============================================================
-# 7. ESCRITA DELTA BRONZE
+# 6. ESCRITA DELTA BRONZE
 # ============================================================
 
 (
@@ -165,14 +151,3 @@ spark_df.show(20, truncate=False)
     .partitionBy("ano_ingestao", "mes_ingestao")
     .saveAsTable(TABELA_DESTINO)
 )
-
-
-# ============================================================
-# 8. VALIDAÇÃO FINAL
-# ============================================================
-
-spark.sql(f"""
-SELECT
-    COUNT(*) AS qtd_tipos_evento
-FROM {TABELA_DESTINO}
-""").show()

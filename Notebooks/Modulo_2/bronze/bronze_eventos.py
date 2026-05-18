@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # BRONZE_EVENTOS
 # Projeto Final - Engenharia de Dados
@@ -203,109 +202,35 @@ spark_df = spark.createDataFrame(lista_eventos)
 
 
 # ============================================================
-# 7. CAMPOS AUDITORIA
+# 6. CAMPOS AUDITORIA
 # ============================================================
 
 spark_df = (
-
     spark_df
-
-    # --------------------------------------------
-    # Data ingestão
-    # --------------------------------------------
-
-    .withColumn(
-        "ingested_at",
-        F.current_timestamp()
-    )
-
-    # --------------------------------------------
-    # Data atualização
-    # --------------------------------------------
-
-    .withColumn(
-        "updated_at",
-        F.current_timestamp()
-    )
-
-    # --------------------------------------------
-    # Endpoint origem
-    # --------------------------------------------
-
-    .withColumn(
-        "source_endpoint",
-        F.lit(ENDPOINT)
-    )
-
-    # --------------------------------------------
-    # Batch execução
-    # --------------------------------------------
-
-    .withColumn(
-        "batch_id",
-        F.lit(BATCH_ID)
-    )
-
-    # --------------------------------------------
-    # Versão pipeline
-    # --------------------------------------------
-
-    .withColumn(
-        "pipeline_version",
-        F.lit(PIPELINE_VERSION)
-    )
-
-    # --------------------------------------------
-    # Particionamento temporal
-    # --------------------------------------------
-
-    .withColumn(
-        "ano_ingestao",
-        F.year(F.current_timestamp())
-    )
-
-    .withColumn(
-        "mes_ingestao",
-        F.month(F.current_timestamp())
-    )
-
+    .withColumn("ingested_at", F.current_timestamp())
+    .withColumn("updated_at", F.current_timestamp())
+    .withColumn("source_endpoint", F.lit(ENDPOINT))
+    .withColumn("batch_id", F.lit(BATCH_ID))
+    .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    .withColumn("ano_ingestao", F.year(F.current_timestamp()))
+    .withColumn("mes_ingestao", F.month(F.current_timestamp()))
 )
 
 
 # ============================================================
-# 8. VALIDAÇÕES
-# ============================================================
-
-print(
-    f"[INFO] Quantidade registros DataFrame: {spark_df.count()}"
-)
-
-spark_df.printSchema()
-
-spark_df.show(
-    5,
-    truncate=False
-)
-
-
-# ============================================================
-# 9. ESCRITA DELTA BRONZE
+# 7. ESCRITA DELTA BRONZE
 # ============================================================
 
 (
     spark_df.write
-
     .format("delta")
-
     # Bronze deve preservar histórico
     .mode("overwrite")
     .option("overwriteSchema", "true")
-
     .partitionBy(
         "ano_ingestao",
         "mes_ingestao"
     )
-
     .saveAsTable(TABELA_DESTINO)
 )
 

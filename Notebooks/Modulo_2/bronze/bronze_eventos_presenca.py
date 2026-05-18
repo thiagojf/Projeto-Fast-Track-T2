@@ -1,4 +1,3 @@
-# Databricks notebook source
 # ============================================================
 # BRONZE_EVENTOS_PRESENCA
 # Camada Bronze | Presença de deputados por evento
@@ -193,18 +192,7 @@ spark_df = (
 
 
 # ============================================================
-# 7. VALIDAÇÕES
-# ============================================================
-
-print(f"[INFO] Quantidade registros DataFrame: {spark_df.count()}")
-print(f"[WARNING] Total de erros: {len(lista_erros)}")
-
-spark_df.printSchema()
-spark_df.show(5, truncate=False)
-
-
-# ============================================================
-# 8. ESCRITA DELTA BRONZE
+# 7. ESCRITA DELTA BRONZE
 # ============================================================
 
 (
@@ -216,15 +204,3 @@ spark_df.show(5, truncate=False)
     .saveAsTable(TABELA_DESTINO)
 )
 
-
-# ============================================================
-# 9. VALIDAÇÃO FINAL
-# ============================================================
-
-spark.sql(f"""
-SELECT
-    COUNT(*) AS qtd_linhas,
-    COUNT(DISTINCT id_evento) AS qtd_eventos,
-    COUNT(DISTINCT id) AS qtd_deputados
-FROM {TABELA_DESTINO}
-""").show()
