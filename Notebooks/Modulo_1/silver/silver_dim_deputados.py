@@ -10,8 +10,8 @@ from pyspark.sql.window import Window
 # 1. CONFIGURAÇÕES
 # ============================================================
 
-TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_frentess"
-TABELA_DESTINO = "desafio_final_t2.silver.dim_frente"
+TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_deputados"
+TABELA_DESTINO = "desafio_final_t2.silver.dim_deputado"
 
 PIPELINE_VERSION = "1.0"
 
@@ -33,11 +33,11 @@ df_silver = (
         F.col("id").cast("long").alias("nk_deputado"),
         F.col("uri").cast("string").alias("uri_deputado"),
         F.col("nome").cast("string").alias("nome_deputado"),
-        F.col("sigla_partido").cast("string").alias("sigla_partido"),
-        F.regexp_extract(F.col("uri_partido"), r"/partidos/(\d+)", 1).cast("long").alias("id_partido"),
-        F.col("sigla_uf").cast("string").alias("sigla_uf"),
-        F.col("id_legislatura").cast("int").alias("id_legislatura"),
-        F.col("url_foto").cast("string").alias("url_foto"),
+        F.col("siglapartido").cast("string").alias("sigla_partido"),
+        F.regexp_extract(F.col("uripartido"), r"/partidos/(\d+)", 1).cast("long").alias("id_partido"),
+        F.col("siglauf").cast("string").alias("sigla_uf"),
+        F.col("idlegislatura").cast("int").alias("id_legislatura"),
+        F.col("urlfoto").cast("string").alias("url_foto"),
         F.col("email").cast("string").alias("email"),
         F.col("ingested_at").cast("timestamp").alias("bronze_ingested_at")
     )
