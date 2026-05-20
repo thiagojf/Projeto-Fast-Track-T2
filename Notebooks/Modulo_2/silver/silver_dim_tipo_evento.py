@@ -60,7 +60,7 @@ df_dim_tipo_evento = (
             F.col("descricao_tipo_evento"),
             F.col("nome_tipo_evento"),
             F.col("sigla_tipo_evento")
-        )
+        ))
     .select(
         "sk_tipo_evento",
         "cod_tipo_evento",
