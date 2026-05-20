@@ -28,7 +28,7 @@ ITENS_POR_PAGINA = 50
 PIPELINE_VERSION = "1.0"
 BATCH_ID = str(uuid.uuid4())
 
-TABELA_ORIGEM_DEPUTADOS = "desafio_final_T2.silver.dim_deputado"
+TABELA_ORIGEM_DEPUTADOS = "desafio_final_t2.bronze.bronze_deputados"
 TABELA_DESTINO = "desafio_final_T2.bronze.bronze_despesas"
 
 # ============================================================
@@ -68,13 +68,12 @@ def make_request(url, params=None):
 #ids_deputados = [204379]
 
 ids_deputados = [
-    row["nk_deputado"]
+    row["id"]
     for row in (
         spark.table(TABELA_ORIGEM_DEPUTADOS)
-        .filter(F.col("is_current") == True)
-        .select("nk_deputado")
+        .select("id")
         .distinct()
-        #.limit(5)  # teste inicial
+        .limit(5)
         .collect()
     )
 ]
@@ -196,7 +195,7 @@ spark_df = (
 
 
 # ============================================================
-# 6. CAMPOS DE AUDITORIA
+# 7. CAMPOS DE AUDITORIA
 # ============================================================
 
 spark_df = (
@@ -211,7 +210,7 @@ spark_df = (
 )
 
 # ============================================================
-# 7. ESCRITA DELTA BRONZE
+# 9. ESCRITA DELTA BRONZE
 # ============================================================
 
 (
