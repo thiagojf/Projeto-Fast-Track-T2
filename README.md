@@ -196,8 +196,8 @@ Projeto/
 ## Silver
 
 1. silver_dim_deputado
-2. silver_bridge_frente_deputado
-3. silver_dim_frentes
+2. silver_dim_frentes
+3. silver_bridge_frente_deputado
 4. silver_dim_tipo_evento
 5. silver_dim_evento
 6. silver_dim_orgao
