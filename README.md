@@ -161,20 +161,20 @@ Principais entregas:
 ```text
 Projeto/
 │
-├── notebooks/
+├── Notebooks/
 │   ├── Modulos/
-│       ├── bronze/
-│       ├── silver/
-│       ├── gold/
-│       └── views/
+│   |    ├── bronze/
+│   |    ├── silver/
+│   |    ├── gold/
+│   |    └── views/
+|   |
+│   └── Orquestração/
 │
-├── docs/
+├── Docs/
 │   ├── Arquitetura_Medalhao_Projeto.png
 │   └── dicionario_dados.md
 │
 ├── README.md
-│
-└── apresentacao/
 ```
 
 ---
@@ -195,29 +195,32 @@ Projeto/
 
 ## Silver
 
-1. dim_deputado
-2. bridge_frente_deputado
-3. dim_tipo_evento
-4. dim_evento
-5. dim_orgao
-6. bridge_evento_orgao
-7. dim_data
-8. despesas
-9. dim_fornecedor
-10. dim_categoria_despesa
+1. silver_dim_deputado
+2. silver_bridge_frente_deputado
+3. silver_dim_frentes
+4. silver_dim_tipo_evento
+5. silver_dim_evento
+6. silver_dim_orgao
+7. silver_bridge_evento_orgao
+8. silver_dim_data
+9. silver_despesas
+10. silver_dim_fornecedor
+11. silver_dim_categoria_despesa
 
 ---
 
 ## Gold
 
 1. gold_frentes_membros
-2. gold_ranking_deputados
-3. gold_eventos
-4. gold_taxa_presenca_eventos
-5. gold_densidade_eventos_semana
-6. gold_comparativo_periodo_eleitoral
-7. fat_despesas
-8. top_gastos_partido
+2. gold_ihh_frentes
+3. gold_ranking_deputados
+4. gold_eventos
+5. gold_vw_eventos_futuros
+6. gold_densidade_eventos_semana
+7. gold_taxa_presenca_eventos
+8. gold_comparativo_periodo_eleitoral
+9. gold_fat_despesas
+10. gold_realtorio_top10_gastos_mensal
 
 ---
 
