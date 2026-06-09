@@ -26,6 +26,7 @@ df_bronze = spark.table(TABELA_ORIGEM)
 
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
+# função explode neste campo para retornar uma nova linha para cada elemento no array
 # ============================================================
 
 df_silver_evento_explodido = (
@@ -46,6 +47,7 @@ df_silver_evento_explodido = (
 
 # ============================================================
 # 4. SURROGATE KEY
+# sk_orgao - chave substituta para o orgão, gerada a partir da função row_number() ordenada por nk_orgao
 # ============================================================
 
 window_sk = Window.orderBy("nk_orgao")
