@@ -19,6 +19,8 @@ import uuid
 import json
 
 from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, LongType
+from pyspark.sql import Row
 
 
 # ============================================================
@@ -146,11 +148,31 @@ while True:
 
 
         # ============================================
-        # CRIAÇÃO DO DATAFRAME
+        # CRIAÇÃO DO DATAFRAME COM SCHEMA EXPLÍCITO
         # ============================================
 
+        # Criei um StructType com todos os campos e seus tipos, garantindo que o Spark não precise inferir tipos de dados que contêm valores None
+        schema = StructType([
+            StructField("id", LongType(), True), #Ajustei de IntegerType para LongType para compatibilidade com o schema da tabela existente
+            StructField("uri", StringType(), True),
+            StructField("dataHoraInicio", StringType(), True),
+            StructField("dataHoraFim", StringType(), True),
+            StructField("situacao", StringType(), True),
+            StructField("descricaoTipo", StringType(), True),
+            StructField("descricao", StringType(), True),
+            StructField("localExterno", StringType(), True),
+            StructField("orgaos", StringType(), True),
+            StructField("localCamara", StringType(), True),
+            StructField("urlRegistro", StringType(), True),
+            StructField("raw_payload", StringType(), True)
+        ])
+
+        # Transformei os dicionários em objetos Row antes de criar o DataFrame, o que torna a criação mais robusta no ambiente Spark Connect (serverless)
+        rows = [Row(**evento) for evento in dados]
+
         spark_df = spark.createDataFrame(
-                dados
+                rows,
+                schema=schema
             )
 
 
