@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # BRONZE_FRENTES_MEMBROS
 # Camada Bronze | Ingestão RAW API Câmara
@@ -16,8 +21,7 @@ from pyspark.sql import functions as F
 # ============================================================
 
 BASE_URL = "https://dadosabertos.camara.leg.br/api/v2"
-ENDPOINT_BASE = "/frentes"
-ENDPOINT_MEMBROS_TEMPLATE = "/frentes/{id_frente}/membros"
+ENDPOINT = "/frentes/membros"
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -30,38 +34,9 @@ TABELA_ORIGEM_FRENTES = "desafio_final_T2.bronze.bronze_frentes"
 TABELA_DESTINO = "desafio_final_T2.bronze.bronze_frentes_membros"
 
 
-# ============================================================
-# 2. FUNÇÃO REQUEST COM RETRY
-# ============================================================
-
-def make_request(url, params=None):
-
-    for tentativa in range(1, MAX_RETRIES + 1):
-
-        try:
-            response = requests.get(
-                url=url,
-                params=params,
-                timeout=TIMEOUT
-            )
-
-            if response.status_code == 200:
-                return response.json()
-
-            print(f"[WARNING] Status Code {response.status_code} | URL: {url}")
-
-        except Exception as e:
-            print(f"[ERROR] Tentativa {tentativa} falhou | URL: {url} | Erro: {str(e)}")
-
-        if tentativa < MAX_RETRIES:
-            print(f"[INFO] Aguardando {RETRY_DELAY}s para retry...")
-            time.sleep(RETRY_DELAY)
-
-    raise Exception(f"Falha na requisição após múltiplas tentativas | URL: {url}")
-
 
 # ============================================================
-# 3. OBTER IDS DAS FRENTES JÁ INGESTADAS
+# 2. OBTER IDS DAS FRENTES JÁ INGESTADAS
 # ============================================================
 
 df_frentes = spark.table(TABELA_ORIGEM_FRENTES)
@@ -80,95 +55,135 @@ print(f"[INFO] Total de frentes para processar: {len(ids_frentes)}")
 
 
 # ============================================================
-# 4. INGESTÃO DOS MEMBROS POR FRENTE
+# 3. INGESTÃO DOS MEMBROS POR FRENTE
 # ============================================================
 
 lista_frentes_membros = []
 
-for id_frente in ids_frentes:
+try:
+    for id_frente in ids_frentes:
 
-    endpoint_atual = f"/frentes/{id_frente}/membros"
-    url_atual = f"{BASE_URL}{endpoint_atual}"
+        endpoint_atual = f"/frentes/{id_frente}/membros"
+        url_atual = f"{BASE_URL}{endpoint_atual}"
 
-    print(f"[INFO] Coletando membros da frente {id_frente}")
+        log_info(
+            f"Coletando membros da frente {id_frente}"
+        )
 
-    response_json = make_request(url=url_atual)
+        # ============================================
+        # REQUEST API (sem parâmetros - API não aceita)
+        # ============================================
+        response_json = get_api_data(
+            url=url_atual,
+            params=None,
+            max_retries=MAX_RETRIES,
+            retry_delay=RETRY_DELAY,
+            timeout=TIMEOUT
+        )
+        # ============================================
+        # DADOS
+        # ============================================
+        dados = response_json.get("dados", [])
+        
+        if not dados:
+            log_info(
+                f"Nenhum membro encontrado para frente {id_frente}. Continuando..."
+            )
+            continue
+            
+        # ============================================
+        # LOOP REGISTROS RAW PAYLOAD
+        # ============================================
+        for membro in dados:
+            membro["id_frente"] = id_frente
+            membro["source_endpoint_detail"] = endpoint_atual
+            membro["raw_payload"] = json.dumps(membro, ensure_ascii=False)
 
-    dados = response_json.get("dados", [])
+            lista_frentes_membros.append(membro)
 
-    if not dados:
-        print(f"[WARNING] Nenhum membro encontrado para frente {id_frente}")
-        continue
+        print(
+            f"[INFO] Frente {id_frente} | Registros acumulados: {len(lista_frentes_membros)}"
+        )
 
-    for membro in dados:
-        membro["id_frente"] = id_frente
-        membro["source_endpoint_detail"] = endpoint_atual
-        membro["raw_payload"] = json.dumps(membro, ensure_ascii=False)
+        # ============================================
+        # RATE LIMIT
+        # ============================================
+        time.sleep(0.2)
 
-        lista_frentes_membros.append(membro)
+    # ============================================
+    # DATAFRAME
+    # ============================================
+    if not lista_frentes_membros:
+        raise Exception("Nenhum membro de frente retornado pela API.")
 
-    print(
-        f"[INFO] Frente {id_frente} | Registros acumulados: {len(lista_frentes_membros)}"
+    json_strings = [
+        json.dumps(registro, ensure_ascii=False)
+        for registro in lista_frentes_membros
+    ]
+
+    spark_df_raw = spark.createDataFrame(
+        [(item,) for item in json_strings],
+        ["json_string"]
     )
 
-    time.sleep(0.2)
-
-
-# ============================================================
-# 5. CRIAÇÃO SPARK DATAFRAME
-# ============================================================
-
-if not lista_frentes_membros:
-    raise Exception("Nenhum membro de frente retornado pela API.")
-
-json_strings = [
-    json.dumps(registro, ensure_ascii=False)
-    for registro in lista_frentes_membros
-]
-
-spark_df_raw = spark.createDataFrame(
-    [(item,) for item in json_strings],
-    ["json_string"]
-)
-
-spark_df = (
-    spark_df_raw
-    .select(
-        F.from_json(
-            F.col("json_string"),
-            "struct<id:bigint,uri:string,nome:string,siglaPartido:string,uriPartido:string,siglaUf:string,idLegislatura:bigint,urlFoto:string,email:string,id_frente:bigint,source_endpoint_detail:string,raw_payload:string>"
-        ).alias("dados")
+    spark_df = (
+        spark_df_raw
+        .select(
+            F.from_json(
+                F.col("json_string"),
+                "struct<id:bigint,uri:string,nome:string,siglaPartido:string,uriPartido:string,siglaUf:string,idLegislatura:bigint,urlFoto:string,email:string,titulo:string,codTitulo:bigint,dataInicio:string,dataFim:string,id_frente:bigint,source_endpoint_detail:string,raw_payload:string>"
+            ).alias("dados")
+        )
+        .select("dados.*")
     )
-    .select("dados.*")
+    
+    # ============================================
+    # AUDITORIA
+    # ============================================
+
+    spark_df = adicionar_auditoria(
+        df=spark_df,
+        endpoint=ENDPOINT,
+        batch_id=BATCH_ID,
+        pipeline_version=PIPELINE_VERSION
+    )
+    
+    # ============================================
+    # ESCRITA DELTA
+    # ============================================
+
+    salvar_delta(
+        df=spark_df,
+        tabela=TABELA_DESTINO,
+        modo="append",
+        particionar=True,
+        colunas_particao=[
+            "ano_ingestao",
+            "mes_ingestao"
+        ]
+    )
+
+    log_info(
+        "Dados gravados com sucesso."
+    )
+
+except Exception as e:
+
+    log_error(
+        f"Erro na ingestão: {str(e)}"
+    )
+
+    raise
+        
+
+# ============================================================
+# 4. FINALIZAÇÃO
+# ============================================================
+
+log_info(
+    "Ingestão concluída com sucesso."
 )
 
 
-# ============================================================
-# 6. CAMPOS DE AUDITORIA
-# ============================================================
+# COMMAND ----------
 
-spark_df = (
-    spark_df
-    .withColumn("ingested_at", F.current_timestamp())
-    .withColumn("updated_at", F.current_timestamp())
-    .withColumn("source_endpoint", F.lit(ENDPOINT_MEMBROS_TEMPLATE))
-    .withColumn("batch_id", F.lit(BATCH_ID))
-    .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
-    .withColumn("ano_ingestao", F.year(F.current_timestamp()))
-    .withColumn("mes_ingestao", F.month(F.current_timestamp()))
-)
-
-
-
-
-# ============================================================
-# 7. ESCRITA DELTA BRONZE
-# ============================================================
-
-(
-    spark_df.write
-    .format("delta")
-    .mode("append")
-    .partitionBy("ano_ingestao", "mes_ingestao")
-    .saveAsTable(TABELA_DESTINO)
-)
