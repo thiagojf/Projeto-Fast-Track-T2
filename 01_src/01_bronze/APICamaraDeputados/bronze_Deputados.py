@@ -83,7 +83,7 @@ while True:
         # REQUEST API
         # ============================================
 
-        response_json = make_request(
+        response_json = get_api_data(
             url=URL,
             params=params,
             max_retries=MAX_RETRIES,
