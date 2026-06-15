@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # BRONZE_EVENTOS
 # Projeto Final - Engenharia de Dados
@@ -26,7 +31,6 @@ from pyspark.sql import functions as F
 
 BASE_URL = "https://dadosabertos.camara.leg.br/api/v2"
 ENDPOINT = "/eventos"
-
 URL = f"{BASE_URL}{ENDPOINT}"
 
 # ----------------------------
@@ -42,7 +46,6 @@ TIMEOUT = 30
 # ----------------------------
 
 PIPELINE_VERSION = "1.0"
-
 BATCH_ID = str(uuid.uuid4())
 
 # ----------------------------
@@ -53,61 +56,7 @@ TABELA_DESTINO = "desafio_final_t2.bronze.bronze_eventos"
 
 
 # ============================================================
-# 3. FUNÇÃO REQUEST COM RETRY
-# ============================================================
-
-def make_request(url, params=None):
-
-    for tentativa in range(1, MAX_RETRIES + 1):
-
-        try:
-
-            response = requests.get(
-                url=url,
-                params=params,
-                timeout=TIMEOUT
-            )
-
-            # ============================================
-            # SUCESSO
-            # ============================================
-
-            if response.status_code == 200:
-                return response.json()
-
-            print(
-                f"[WARNING] Status Code: {response.status_code}"
-            )
-
-        except Exception as e:
-
-            print(
-                f"[ERROR] Tentativa {tentativa} falhou: {str(e)}"
-            )
-
-        # ============================================
-        # RETRY
-        # ============================================
-
-        if tentativa < MAX_RETRIES:
-
-            print(
-                f"[INFO] Aguardando {RETRY_DELAY}s para retry..."
-            )
-
-            time.sleep(RETRY_DELAY)
-
-    # ============================================
-    # FALHA FINAL
-    # ============================================
-
-    raise Exception(
-        "Falha na requisição após múltiplas tentativas"
-    )
-
-
-# ============================================================
-# 4. INGESTÃO COM PAGINAÇÃO
+# 3. INGESTÃO COM PAGINAÇÃO
 # ============================================================
 
 # Lista que armazenará os registros
@@ -121,116 +70,149 @@ DATA_FIM = "2026-12-31"
 
 while True:
 
-    print(f"[INFO] Coletando página {pagina}")
-
-    params = {
-    "dataInicio": DATA_INICIO,
-    "dataFim": DATA_FIM,
-    "pagina": pagina,
-    "itens": itens_por_pagina
-    }
-
-    # ============================================
-    # REQUEST API
-    # ============================================
-
-    response_json = make_request(
-        URL,
-        params=params
-    )
-
-    # ============================================
-    # DADOS
-    # ============================================
-
-    dados = response_json.get("dados", [])
-
-    # ============================================
-    # CONDIÇÃO PARADA
-    # ============================================
-
-    if not dados:
-
-        print(
-            "[INFO] Nenhum registro encontrado. Finalizando ingestão."
+    try: 
+        log_info(
+            f"Coletando página {pagina}"
         )
 
-        break
+        params = {
+        "dataInicio": DATA_INICIO,
+        "dataFim": DATA_FIM,
+        "pagina": pagina,
+        "itens": itens_por_pagina
+        }
 
-    # ============================================
-    # LOOP REGISTROS
-    # ============================================
+        # ============================================
+        # REQUEST API
+        # ============================================
 
-    for eventos in dados:
-
-        # ----------------------------------------
-        # Payload RAW
-        # ----------------------------------------
-
-        eventos["raw_payload"] = json.dumps(
-            eventos,
-            ensure_ascii=False
+        response_json = get_api_data(
+            URL,
+            params=params
         )
 
-        # ----------------------------------------
-        # Adiciona na lista
-        # ----------------------------------------
+        # ============================================
+        # DADOS
+        # ============================================
 
-        lista_eventos.append(eventos)
+        dados = response_json.get(
+            "dados",
+            []
+        )
 
-    print(
-        f"[INFO] Registros acumulados: {len(lista_eventos)}"
-    )
+        # ============================================
+        # CONDIÇÃO DE PARADA
+        # ============================================
 
-    # Próxima página
-    pagina += 1
+        if not dados:
 
-    # ============================================
-    # RATE LIMITING SIMPLES
-    # ============================================
+            log_info(
+                "Nenhum registro encontrado. Finalizando ingestão."
+            )
 
-    time.sleep(0.2)
+            break
 
+        # ============================================
+        # LOOP REGISTROS RAW PAYLOAD
+        # ============================================
+
+        for eventos in dados:
+
+            eventos["raw_payload"] = json.dumps(
+                eventos,
+                ensure_ascii=False
+            )
+        
+        # ============================================
+        # Na camada Bronze optamos por armazenar estruturas complexas serializadas em JSON para preservar fielmente a resposta da API e evitar problemas de inferência de schema. A normalização dessas estruturas ocorre posteriormente na camada Silver.
+        # ============================================
+        
+        for evento in dados:
+
+            evento["raw_payload"] = json.dumps(
+                evento,
+                ensure_ascii=False
+            )
+
+            for campo, valor in list(evento.items()):
+
+                if isinstance(valor, (list, dict)):
+
+                    evento[campo] = json.dumps(
+                        valor,
+                        ensure_ascii=False
+                    )
+
+
+
+        # ============================================
+        # CRIAÇÃO DO DATAFRAME
+        # ============================================
+
+        spark_df = spark.createDataFrame(
+                dados
+            )
+
+
+        # ============================================
+        # AUDITORIA
+        # ============================================
+
+        spark_df = adicionar_auditoria(
+            df=spark_df,
+            endpoint=ENDPOINT,
+            batch_id=BATCH_ID,
+            pipeline_version=PIPELINE_VERSION
+        )
+
+        # ============================================
+        # ESCRITA DELTA
+        # Primeira execução = overwrite
+        # Próximas execuções = append
+        # ============================================
+        if not spark.catalog.tableExists(TABELA_DESTINO):
+            modo_escrita = "overwrite"
+        else:
+            modo_escrita = "append"
+        
+        salvar_delta(
+            df=spark_df,
+            tabela=TABELA_DESTINO,
+            modo=modo_escrita,
+            particionar=True,
+            colunas_particao=[
+                "ano_ingestao",
+                "mes_ingestao"
+            ]
+        )
+
+        log_info(
+            f"Página {pagina} gravada com sucesso."
+        )
+
+        pagina += 1
+
+        # ============================================
+        # RATE LIMIT
+        # ============================================
+
+        time.sleep(0.2)
+
+    except Exception as e:
+
+        log_error(
+            f"Erro na página {pagina}: {str(e)}"
+        )
+
+        raise
+        
 
 # ============================================================
-# 5. CRIAÇÃO SPARK DATAFRAME
+# 4. FINALIZAÇÃO
 # ============================================================
 
-spark_df = spark.createDataFrame(lista_eventos)
-
-
-
-
-# ============================================================
-# 6. CAMPOS AUDITORIA
-# ============================================================
-
-spark_df = (
-    spark_df
-    .withColumn("ingested_at", F.current_timestamp())
-    .withColumn("updated_at", F.current_timestamp())
-    .withColumn("source_endpoint", F.lit(ENDPOINT))
-    .withColumn("batch_id", F.lit(BATCH_ID))
-    .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
-    .withColumn("ano_ingestao", F.year(F.current_timestamp()))
-    .withColumn("mes_ingestao", F.month(F.current_timestamp()))
+log_info(
+    "Ingestão concluída com sucesso."
 )
 
-
-# ============================================================
-# 7. ESCRITA DELTA BRONZE
-# ============================================================
-
-(
-    spark_df.write
-    .format("delta")
-    # Bronze deve preservar histórico
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .partitionBy(
-        "ano_ingestao",
-        "mes_ingestao"
-    )
-    .saveAsTable(TABELA_DESTINO)
-)
 
