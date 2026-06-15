@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # BRONZE_DESPESAS
 # Camada Bronze | Ingestão RAW API Câmara
@@ -32,37 +37,7 @@ TABELA_ORIGEM_DEPUTADOS = "desafio_final_t2.bronze.bronze_deputados"
 TABELA_DESTINO = "desafio_final_T2.bronze.bronze_despesas"
 
 # ============================================================
-# 2. FUNÇÃO REQUEST COM RETRY
-# ============================================================
-
-def make_request(url, params=None):
-
-    for tentativa in range(1, MAX_RETRIES + 1):
-
-        try:
-            response = requests.get(
-                url=url,
-                params=params,
-                timeout=TIMEOUT
-            )
-
-            if response.status_code == 200:
-                return response.json()
-
-            print(f"[WARNING] Status Code {response.status_code} | URL: {url}")
-
-        except Exception as e:
-            print(f"[ERROR] Tentativa {tentativa} falhou | URL: {url} | Erro: {str(e)}")
-
-        if tentativa < MAX_RETRIES:
-            print(f"[INFO] Aguardando {RETRY_DELAY}s para retry...")
-            time.sleep(RETRY_DELAY)
-
-    raise Exception(f"Falha na requisição após múltiplas tentativas | URL: {url}")
-
-
-# ============================================================
-# 3. OBTER IDS DAS FRENTES JÁ INGESTADAS
+# 2. OBTER IDS DAS FRENTES JÁ INGESTADAS
 # ============================================================
 
 #ids_deputados = [204379]
@@ -82,141 +57,166 @@ print(f"[INFO] Total de deputados para processar: {len(ids_deputados)}")
 
 
 # ============================================================
-# 4. INGESTÃO DOS MEMBROS POR FRENTE
+# 3. INGESTÃO DOS MEMBROS POR FRENTE
 # ============================================================
 
 lista_despesas = []
 
-for id_deputado in ids_deputados:
+try:
+    log_info("Iniciando ingestão de despesas")
 
-    for ano_referencia in ANOS_REFERENCIA:
+    for id_deputado in ids_deputados:
 
-        pagina = 1
+        for ano_referencia in ANOS_REFERENCIA:
 
-        endpoint_atual = f"/deputados/{id_deputado}/despesas"
-        url_atual = f"{BASE_URL}{endpoint_atual}"
+            pagina = 1
+            endpoint_atual = f"/deputados/{id_deputado}/despesas"
+            url_atual = f"{BASE_URL}{endpoint_atual}"
 
-        while True:
+            while True:
 
-            params = {
-                "ano": ano_referencia,
-                "pagina": pagina,
-                "itens": ITENS_POR_PAGINA
-            }
+                params = {
+                    "ano": ano_referencia,
+                    "pagina": pagina,
+                    "itens": ITENS_POR_PAGINA
+                }
 
-            print(
-                f"[INFO] Deputado {id_deputado} | "
-                f"Ano {ano_referencia} | Página {pagina}"
-            )
-
-            response_json = make_request(
-                url=url_atual,
-                params=params
-            )
-
-            dados = response_json.get("dados", [])
-
-            if not dados:
                 print(
-                    f"[INFO] Fim deputado {id_deputado} | "
-                    f"Ano {ano_referencia}"
-                )
-                break
-
-            for despesa in dados:
-
-                despesa["nk_deputado"] = id_deputado
-                despesa["ano_referencia"] = ano_referencia
-                despesa["source_endpoint_detail"] = endpoint_atual
-                despesa["raw_payload"] = json.dumps(
-                    despesa,
-                    ensure_ascii=False
+                    f"[INFO] Deputado {id_deputado} | "
+                    f"Ano {ano_referencia} | Página {pagina}"
                 )
 
-                lista_despesas.append(despesa)
+                # ============================================
+                # REQUEST API
+                # ============================================
+                response_json = get_api_data(
+                    url=url_atual,
+                    params=params
+                )
 
-            print(f"[INFO] Registros acumulados: {len(lista_despesas)}")
+                # ============================================
+                # DADOS
+                # ============================================
+                dados = response_json.get("dados", [])
 
-            pagina += 1
+                # ============================================
+                # CONDIÇÃO DE PARADA
+                # ============================================
+                if not dados:
+                    print(
+                        f"[INFO] Fim deputado {id_deputado} | "
+                        f"Ano {ano_referencia}"
+                    )
+                    break
 
-            time.sleep(0.2)
+                # ============================================
+                # RAW PAYLOAD
+                # ============================================
+                for despesa in dados:
+                    despesa["nk_deputado"] = id_deputado
+                    despesa["ano_referencia"] = ano_referencia
+                    despesa["source_endpoint_detail"] = endpoint_atual
+                    despesa["raw_payload"] = json.dumps(
+                        despesa,
+                        ensure_ascii=False
+                    )
+                    lista_despesas.append(despesa)
 
+                print(f"[INFO] Registros acumulados: {len(lista_despesas)}")
 
-# ============================================================
-# 5. CRIAÇÃO SPARK DATAFRAME
-# ============================================================
+                pagina += 1
+                time.sleep(0.2)
 
-if not lista_despesas:
-    raise Exception(
-        f"Nenhuma despesa retornada pela API para os anos {ANOS_REFERENCIA}."
+    # ============================================================
+    # CRIAÇÃO DO DATAFRAME
+    # ============================================================
+    if not lista_despesas:
+        raise Exception(
+            f"Nenhuma despesa retornada pela API para os anos {ANOS_REFERENCIA}."
+        )
+
+    json_strings = [
+        json.dumps(registro, ensure_ascii=False)
+        for registro in lista_despesas
+    ]
+
+    spark_df_raw = spark.createDataFrame(
+        [(item,) for item in json_strings],
+        ["json_string"]
     )
 
-json_strings = [
-    json.dumps(registro, ensure_ascii=False)
-    for registro in lista_despesas
-]
+    schema_despesas = """
+    struct<
+        ano:int,
+        mes:int,
+        tipoDespesa:string,
+        codDocumento:bigint,
+        tipoDocumento:string,
+        codTipoDocumento:int,
+        dataDocumento:string,
+        numDocumento:string,
+        valorDocumento:double,
+        urlDocumento:string,
+        nomeFornecedor:string,
+        cnpjCpfFornecedor:string,
+        valorLiquido:double,
+        valorGlosa:double,
+        numRessarcimento:string,
+        codLote:bigint,
+        parcela:int,
+        nk_deputado:bigint,
+        ano_referencia:int,
+        source_endpoint_detail:string,
+        raw_payload:string
+    >
+    """
 
-spark_df_raw = spark.createDataFrame(
-    [(item,) for item in json_strings],
-    ["json_string"]
-)
+    spark_df = (
+        spark_df_raw
+        .select(F.from_json(F.col("json_string"), schema_despesas).alias("dados"))
+        .select("dados.*")
+    )
 
-schema_despesas = """
-struct<
-    ano:int,
-    mes:int,
-    tipoDespesa:string,
-    codDocumento:bigint,
-    tipoDocumento:string,
-    codTipoDocumento:int,
-    dataDocumento:string,
-    numDocumento:string,
-    valorDocumento:double,
-    urlDocumento:string,
-    nomeFornecedor:string,
-    cnpjCpfFornecedor:string,
-    valorLiquido:double,
-    valorGlosa:double,
-    numRessarcimento:string,
-    codLote:bigint,
-    parcela:int,
-    nk_deputado:bigint,
-    ano_referencia:int,
-    source_endpoint_detail:string,
-    raw_payload:string
->
-"""
+    # ============================================
+    # AUDITORIA
+    # ============================================
+    spark_df = adicionar_auditoria(
+        df=spark_df,
+        endpoint=ENDPOINT_BASE,
+        batch_id=BATCH_ID,
+        pipeline_version=PIPELINE_VERSION
+    )
 
-spark_df = (
-    spark_df_raw
-    .select(F.from_json(F.col("json_string"), schema_despesas).alias("dados"))
-    .select("dados.*")
-)
+    # ============================================
+    # ESCRITA DELTA
+    # Primeira execução = overwrite
+    # Próximas execuções = append
+    # ============================================
+    if not spark.catalog.tableExists(TABELA_DESTINO):
+        modo_escrita = "overwrite"
+    else:
+        modo_escrita = "append"
 
+    salvar_delta(
+        df=spark_df,
+        tabela=TABELA_DESTINO,
+        modo=modo_escrita,
+        particionar=True,
+        colunas_particao=[
+            "ano_ingestao",
+            "mes_ingestao"
+        ]
+    )
+
+    log_info(
+        f"{len(lista_despesas)} registros gravados com sucesso."
+    )
+
+except Exception as e:
+    log_error(f"Erro durante ingestão: {str(e)}")
+    raise
 
 # ============================================================
-# 7. CAMPOS DE AUDITORIA
+# 4. FINALIZAÇÃO
 # ============================================================
-
-spark_df = (
-    spark_df
-    .withColumn("ingested_at", F.current_timestamp())
-    .withColumn("updated_at", F.current_timestamp())
-    .withColumn("source_endpoint", F.lit(ENDPOINT_DESPESAS_TEMPLATE))
-    .withColumn("batch_id", F.lit(BATCH_ID))
-    .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
-    .withColumn("ano_ingestao", F.year(F.current_timestamp()))
-    .withColumn("mes_ingestao", F.month(F.current_timestamp()))
-)
-
-# ============================================================
-# 9. ESCRITA DELTA BRONZE
-# ============================================================
-
-(
-    spark_df.write
-    .format("delta")
-    .mode("append")
-    .partitionBy("ano_ingestao", "mes_ingestao")
-    .saveAsTable(TABELA_DESTINO)
-)
+log_info("Ingestão concluída com sucesso.")
