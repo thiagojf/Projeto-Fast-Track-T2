@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # BRONZE_TIPO_EVENTO
 # Camada Bronze | Referência de tipos de eventos
@@ -30,124 +35,138 @@ TABELA_DESTINO = "desafio_final_t2.bronze.bronze_tipo_evento"
 
 
 # ============================================================
-# 2. FUNÇÃO REQUEST COM RETRY
-# ============================================================
-
-def make_request(url, params=None):
-
-    for tentativa in range(1, MAX_RETRIES + 1):
-
-        try:
-            response = requests.get(
-                url=url,
-                params=params,
-                timeout=TIMEOUT
-            )
-
-            if response.status_code == 200:
-                return response.json()
-
-            print(f"[WARNING] Status Code: {response.status_code}")
-            print(f"[WARNING] Response: {response.text[:500]}")
-
-        except Exception as e:
-            print(f"[ERROR] Tentativa {tentativa} falhou: {str(e)}")
-
-        if tentativa < MAX_RETRIES:
-            print(f"[INFO] Aguardando {RETRY_DELAY}s para retry...")
-            time.sleep(RETRY_DELAY)
-
-    raise Exception("Falha na requisição após múltiplas tentativas")
-
-
-# ============================================================
 # 3. INGESTÃO
 # ============================================================
+pagina = 1
 
-response_json = make_request(URL)
-
-dados = response_json.get("dados", [])
-
-if not dados:
-    raise Exception("Nenhum tipo de evento retornado pela API.")
-
-lista_tipo_evento = []
-
-for tipo_evento in dados:
-
-    tipo_evento["source_endpoint_detail"] = ENDPOINT
-    tipo_evento["raw_payload"] = json.dumps(
-        tipo_evento,
-        ensure_ascii=False
+try:
+    log_info(
+        f"Coletando página {pagina}"
     )
 
-    lista_tipo_evento.append(tipo_evento)
+    # ============================================
+    # REQUEST API
+    # ============================================
 
-print(f"[INFO] Total de tipos de evento coletados: {len(lista_tipo_evento)}")
-
-
-# ============================================================
-# 4. CRIAÇÃO SPARK DATAFRAME
-# Compatível com Databricks Serverless
-# ============================================================
-
-json_strings = [
-    json.dumps(registro, ensure_ascii=False)
-    for registro in lista_tipo_evento
-]
-
-spark_df_raw = spark.createDataFrame(
-    [(item,) for item in json_strings],
-    ["json_string"]
-)
-
-schema_tipo_evento = """
-struct<
-    cod:string,
-    sigla:string,
-    nome:string,
-    descricao:string,
-    source_endpoint_detail:string,
-    raw_payload:string
->
-"""
-
-spark_df = (
-    spark_df_raw
-    .select(
-        F.from_json(
-            F.col("json_string"),
-            schema_tipo_evento
-        ).alias("dados")
+    response_json = get_api_data(
+        url=URL,
+        max_retries=MAX_RETRIES,
+        retry_delay=RETRY_DELAY,
+        timeout=TIMEOUT
     )
-    .select("dados.*")
-)
 
+    dados = response_json.get("dados", [])
+
+
+    # ============================================
+    # CONDIÇÃO DE PARADA
+    # ============================================
+
+    if not dados:
+
+        log_info(
+            "Nenhum registro encontrado. Finalizando ingestão."
+        )
+
+    # ============================================
+    # RAW PAYLOAD
+    # ============================================
+
+    lista_tipo_evento = []
+
+    for tipo_evento in dados:
+
+        tipo_evento["source_endpoint_detail"] = ENDPOINT
+        tipo_evento["raw_payload"] = json.dumps(
+            tipo_evento,
+            ensure_ascii=False
+        )
+
+        lista_tipo_evento.append(tipo_evento)
+
+    print(f"[INFO] Total de tipos de evento coletados: {len(lista_tipo_evento)}")
+
+
+    # ============================================================
+    # CRIAÇÃO SPARK DATAFRAME
+    # Compatível com Databricks Serverless
+    # ============================================================
+
+    json_strings = [
+        json.dumps(registro, ensure_ascii=False)
+        for registro in lista_tipo_evento
+    ]
+
+    spark_df_raw = spark.createDataFrame(
+        [(item,) for item in json_strings],
+        ["json_string"]
+    )
+
+    schema_tipo_evento = """
+    struct<
+        cod:string,
+        sigla:string,
+        nome:string,
+        descricao:string,
+        source_endpoint_detail:string,
+        raw_payload:string
+    >
+    """
+
+    spark_df = (
+        spark_df_raw
+        .select(
+            F.from_json(
+                F.col("json_string"),
+                schema_tipo_evento
+            ).alias("dados")
+        )
+        .select("dados.*")
+    )
+
+
+
+    # ============================================
+    # AUDITORIA
+    # ============================================
+
+    spark_df = adicionar_auditoria(
+        df=spark_df,
+        endpoint=ENDPOINT,
+        batch_id=BATCH_ID,
+        pipeline_version=PIPELINE_VERSION
+    )
+
+
+    # ============================================
+    # ESCRITA DELTA
+    # Como é uma tabela de domínio quero sempre quero a versão mais recente da referência.
+    # ============================================
+    salvar_delta(
+        df=spark_df,
+        tabela=TABELA_DESTINO,
+        modo="overwrite",
+        overwrite_schema=True,
+        particionar=False
+    )
+
+    log_info(
+        f"{len(lista_tipo_evento)} registros gravados com sucesso."
+    )
+
+except Exception as e:
+
+    log_error(
+        f"Erro na página {pagina}: {str(e)}"
+    )
+
+    raise
+        
 
 # ============================================================
-# 5. CAMPOS DE AUDITORIA
+# 4. FINALIZAÇÃO
 # ============================================================
 
-spark_df = (
-    spark_df
-    .withColumn("ingested_at", F.current_timestamp())
-    .withColumn("updated_at", F.current_timestamp())
-    .withColumn("source_endpoint", F.lit(ENDPOINT))
-    .withColumn("batch_id", F.lit(BATCH_ID))
-    .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
-    .withColumn("ano_ingestao", F.year(F.current_timestamp()))
-    .withColumn("mes_ingestao", F.month(F.current_timestamp()))
-)
-
-# ============================================================
-# 6. ESCRITA DELTA BRONZE
-# ============================================================
-
-(
-    spark_df.write
-    .format("delta")
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .partitionBy("ano_ingestao", "mes_ingestao")
-    .saveAsTable(TABELA_DESTINO)
+log_info(
+    "Ingestão concluída com sucesso."
 )
