@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 #  SILVER - DIM_FORNECEDOR
 # ============================================================
@@ -80,14 +84,17 @@ df_dim_fornecedor = (
 )
 
 # ============================================================
-# 6. ESCRITA DELTA SILVER
+# 5. ESCRITA DELTA SILVER
+# Alterado a estrutura para merge, considerando a necessidade de manter o histórico dos deputados permitindo
+# atualização e inserção de registros sem recriação completa das tabelas.
 # ============================================================
 
-(
-    df_dim_fornecedor.write
-    .format("delta")
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .saveAsTable(TABELA_DESTINO)
+executar_merge(
+    df=df_dim_fornecedor,
+    tabela_destino=TABELA_DESTINO,
+    condicao_merge="""
+        dest.nk_fornecedor = orig.nk_fornecedor
+    """
 )
+
 
