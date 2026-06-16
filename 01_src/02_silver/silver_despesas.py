@@ -1,9 +1,15 @@
 # Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
+
 # ============================================================
 #  SILVER - DIM_DESPESAS
 # ============================================================
 
 from pyspark.sql import functions as F
+from pyspark.sql.functions import *
 from pyspark.sql.window import Window
 from pyspark.sql.functions import explode
 
@@ -79,7 +85,9 @@ df_dim_despesas = (
     df_dim_despesas
     .withColumn("updated_at", F.current_timestamp())
     .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    .withColumn("nk_despesa",sha2(concat_ws("|",F.col("nk_deputado"),F.col("cnpj_cpf_fornecedor"),F.col("data_documento"),F.col("valor_liquido"),F.col("cod_documento"),F.col("num_documento"),F.col("cod_lote")),256))
     .select(
+            "nk_despesa",
             "nk_deputado",
             "ano",
             "mes",
@@ -109,15 +117,16 @@ df_dim_despesas = (
 )
 
 
-
 # ============================================================
 # 7. ESCRITA DELTA SILVER
+# Alterado a estrutura para merge, considerando a necessidade de manter o histórico dos deputados permitindo
+# atualização e inserção de registros sem recriação completa das tabelas.
 # ============================================================
 
-(
-    df_dim_despesas.write
-    .format("delta")
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .saveAsTable(TABELA_DESTINO)
+executar_merge(
+    df=df_dim_despesas,
+    tabela_destino=TABELA_DESTINO,
+    condicao_merge="""
+        dest.nk_despesa = orig.nk_despesa
+    """
 )
