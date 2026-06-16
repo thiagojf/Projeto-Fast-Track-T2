@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # SILVER - DIM_FRENTE
 # ============================================================
@@ -77,14 +82,3 @@ executar_merge(
         dest.id_frente = orig.id_frente
     """
 )
-
-
-executar_merge(
-    df=df_dim_frentes,
-    tabela_destino=TABELA_DESTINO,
-    condicao_merge="""
-        dest.id_frente = orig.id_frente
-    """
-)
-
-
