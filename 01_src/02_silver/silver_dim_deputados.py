@@ -87,14 +87,15 @@ df_dim_deputado = (
 
 # ============================================================
 # 5. ESCRITA DELTA SILVER
+# Alterado a estrutura para merge, considerando a necessidade de manter o histórico dos deputados permitindo
+# atualização e inserção de registros sem recriação completa das tabelas.
 # ============================================================
 
-(
-    df_dim_deputado.write
-    .format("delta")
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .saveAsTable(TABELA_DESTINO)
+executar_merge(
+    df=df_dim_deputado,
+    tabela_destino=TABELA_DESTINO,
+    condicao_merge="""
+        dest.id_deputado = orig.id_deputado
+    """
 )
-
 
