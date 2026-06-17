@@ -151,9 +151,9 @@ while True:
         # CRIAÇÃO DO DATAFRAME COM SCHEMA EXPLÍCITO
         # ============================================
 
-        # Criei um StructType com todos os campos e seus tipos, garantindo que o Spark não precise inferir tipos de dados que contêm valores None
+        # Definir schema explícito para evitar problemas de inferência de tipo
         schema = StructType([
-            StructField("id", LongType(), True), #Ajustei de IntegerType para LongType para compatibilidade com o schema da tabela existente
+            StructField("id", LongType(), True),
             StructField("uri", StringType(), True),
             StructField("dataHoraInicio", StringType(), True),
             StructField("dataHoraFim", StringType(), True),
@@ -167,7 +167,7 @@ while True:
             StructField("raw_payload", StringType(), True)
         ])
 
-        # Transformei os dicionários em objetos Row antes de criar o DataFrame, o que torna a criação mais robusta no ambiente Spark Connect (serverless)
+        # Converter dicionários para Row objects
         rows = [Row(**evento) for evento in dados]
 
         spark_df = spark.createDataFrame(
