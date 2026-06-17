@@ -96,5 +96,3 @@ executar_merge(
         dest.nk_fornecedor = orig.nk_fornecedor
     """
 )
-
-
