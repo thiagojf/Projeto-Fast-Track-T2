@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/merge_utils
 
 # COMMAND ----------
 
@@ -92,8 +92,6 @@ df_dim_deputado = (
 
 # ============================================================
 # 5. ESCRITA DELTA SILVER
-# Alterado a estrutura para merge, considerando a necessidade de manter o histórico dos deputados permitindo
-# atualização e inserção de registros sem recriação completa das tabelas.
 # ============================================================
 
 executar_merge(
@@ -103,4 +101,5 @@ executar_merge(
         dest.id_deputado = orig.id_deputado
     """
 )
+
 
