@@ -1,3 +1,4 @@
+# Databricks notebook source
 # ============================================================
 # SILVER - BRIDGE_EVENTO_ORGAO
 # relacionamento N:N apra evitar muitos-para-muitos precisa de tabela ponte (bridge table)
@@ -24,9 +25,6 @@ PIPELINE_VERSION = "1.0"
 df_silver_dim_orgao = spark.table(TABELA_DIM_ORGAO)
 df_silver_dim_evento = spark.table(TABELA_DIM_EVENTO)
 
-# ============================================================
-# 2.1 RECONSTRUÇÃO DE ESTRUTURAS JSON
-# ============================================================
 schema_orgaos = """
 array<
     struct<
