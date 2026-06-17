@@ -1,3 +1,8 @@
+# Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
 # ============================================================
 # SILVER - BRIDGE_FRENTE_DEPUTADO
 # deputado ↔ frente é um relacionamento N:N apra evitar muitos-para-muitos precisa de tabela ponte (bridge table)
