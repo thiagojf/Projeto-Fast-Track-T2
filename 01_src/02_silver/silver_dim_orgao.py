@@ -23,10 +23,39 @@ PIPELINE_VERSION = "1.0"
 
 df_bronze = spark.table(TABELA_ORIGEM)
 
+# ============================================================
+# 2.1 RECONSTRUÇÃO DE ESTRUTURAS JSON
+# ============================================================
+
+schema_orgaos = """
+array<
+    struct<
+        id:bigint,
+        uri:string,
+        sigla:string,
+        nome:string,
+        apelido:string,
+        codTipoOrgao:int,
+        tipoOrgao:string,
+        nomePublicacao:string,
+        nomeResumido:string
+    >
+>
+"""
+
+df_bronze = (
+    df_bronze
+    .withColumn(
+        "orgaos",
+        F.from_json(
+            F.col("orgaos"),
+            schema_orgaos
+        )
+    )
+)
 
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
-# função explode neste campo para retornar uma nova linha para cada elemento no array
 # ============================================================
 
 df_silver_evento_explodido = (
@@ -47,7 +76,6 @@ df_silver_evento_explodido = (
 
 # ============================================================
 # 4. SURROGATE KEY
-# sk_orgao - chave substituta para o orgão, gerada a partir da função row_number() ordenada por nk_orgao
 # ============================================================
 
 window_sk = Window.orderBy("nk_orgao")
