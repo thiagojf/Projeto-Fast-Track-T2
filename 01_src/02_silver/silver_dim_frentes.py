@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/merge_utils
 
 # COMMAND ----------
 
@@ -10,14 +10,12 @@
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-
 # ============================================================
 # 1. CONFIGURAÇÕES
 # ============================================================
 
 TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_frentes"
 TABELA_DESTINO = "desafio_final_t2.silver.dim_frente"
-
 PIPELINE_VERSION = "1.0"
 
 
@@ -26,7 +24,6 @@ PIPELINE_VERSION = "1.0"
 # ============================================================
 
 df_bronze = spark.table(TABELA_ORIGEM)
-
 
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
@@ -44,14 +41,13 @@ df_silver = (
     .dropDuplicates(["nk_frente", "id_legislatura"])
 )
 
-
 # ============================================================
 # 4. CRIA SURROGATE KEY
 # ============================================================
 
 window_sk = Window.orderBy("nk_frente")
 
-df_dim_frente = (
+df_dim_frentes = (
     df_silver
     .withColumn("sk_frente", F.row_number().over(window_sk))
     .withColumn("updated_at", F.current_timestamp())
@@ -67,7 +63,6 @@ df_dim_frente = (
         "pipeline_version"
     )
 )
-
 
 # ============================================================
 # 5. ESCRITA DELTA SILVER
