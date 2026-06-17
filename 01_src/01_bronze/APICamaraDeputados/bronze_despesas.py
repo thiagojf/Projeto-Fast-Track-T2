@@ -47,7 +47,7 @@ ids_deputados = [
         spark.table(TABELA_ORIGEM_DEPUTADOS)
         .select("id")
         .distinct()
-        #.limit(5)
+        .limit(5)
         .collect()
     )
 ]
@@ -64,7 +64,7 @@ try:
     log_info(
         "Iniciando ingestão de despesas"
     )
-    # ================ 15/06/2026 - Thiago Faria =========
+    # ====================================================
     # Verifica se a tabela já existe na primeira execução não existindo overwrite (cria a tabela).
     # Demais execuções usa append para evitar duplicidade
     # ====================================================
@@ -73,7 +73,7 @@ try:
     )
 
     for id_deputado in ids_deputados:
-        # ========= 15/06/2026 - Thiago Faria =========
+        # ============================================
         # Lista exclusiva do deputado atual quando terminar o processamento deste deputado os dados já serão gravados.
         # Se ocorrer erro no próximo deputado, os anteriores já estarão persistidos.
         # ============================================
@@ -156,7 +156,7 @@ try:
                         despesa,
                         ensure_ascii=False
                     )
-                    # ======== 15/06/2026 - Thiago Faria =========
+                    # ============================================
                     # Armazena somente despesas do deputado atual, lista criada no inicio
                     # ============================================
                     lista_despesas_deputado.append(
@@ -173,7 +173,7 @@ try:
 
                 time.sleep(0.2)
 
-        # ================ 15/06/2026 - Thiago Faria =========
+        # ====================================================
         # Valida a lista de despesas por dputado e retorna se temos dados para persistir não encontrano retorna um log_warning mas continua o processo
         # para processar as despeas do proximo deputado
         # ====================================================
@@ -260,7 +260,7 @@ try:
             pipeline_version=PIPELINE_VERSION
         )
 
-        # ========= 15/06/2026 - Thiago Faria =========
+        # ====================================================
         # ESCRITA DELTA
         # Na p1rimeira execução vai gravar no modo overwrite
         # Nas demais gravações grava no modo append
@@ -282,7 +282,7 @@ try:
                 "mes_ingestao"
             ]
         )
-        # ================ 15/06/2026 - Thiago Faria =========
+        # ====================================================
         # Após a primeira gravação a tabela já existe e a varivael primeira_carga passa aser FALSE e as próximas gravações serão append.
         # ====================================================
         primeira_carga = False
