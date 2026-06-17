@@ -4,8 +4,10 @@
 # COMMAND ----------
 
 # DBTITLE 1,Análise de Engajamento dos Deputados
+
 # ============================================================
 # GOLD - Score de engajamento composto: presença × votações
+#
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -24,6 +26,7 @@ PIPELINE_VERSION = "1.0"
 # 2. LEITURA E TRANSFORMAÇÃO
 # ============================================================
 df_gold_engajamento_deputado = spark.sql("""
+-- Calcula quantidade de eventos com presença por deputado
 WITH deputados_presenca AS (
 
     SELECT
@@ -42,7 +45,7 @@ WITH deputados_presenca AS (
         dep.sigla_partido,
         dep.sigla_uf
 ),votacoes_participadas AS (
-
+-- Consolida participação em votações e distribuição dos tipos de voto
  select  
     dep_p.nk_deputado,
     dep_p.nome_deputado,	
@@ -105,6 +108,7 @@ WITH deputados_presenca AS (
     dep_p.qtd_eventos_presente
 
 ),score_engajamento AS (
+-- Cria score de engajamento composto por presença em eventos (40%) e participação em votações (60%)                                         
 select  
     nk_deputado,
     nome_deputado,	
@@ -136,11 +140,15 @@ select
     AS score_engajamento
 from votacoes_participadas
 )
+-- Gera ranking e percentil de engajamento entre os deputados                                         
 SELECT 
 *,
     DENSE_RANK() OVER(
     ORDER BY score_engajamento DESC
-) as ranking_engajamento
+) as ranking_engajamento,
+PERCENT_RANK() OVER(
+    ORDER BY score_engajamento
+) percentil_engajamento
 FROM score_engajamento
 """)
 
