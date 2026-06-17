@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+
+# COMMAND ----------
+
+# Databricks notebook source
 # ============================================================
 # SILVER - DIM_EVENTO
 # ============================================================
@@ -24,6 +29,31 @@ PIPELINE_VERSION = "1.0"
 
 df_bronze_eventos = spark.table(TABELA_ORIGEM)
 df_tipo_evento = spark.table(TABELA_TIPO_EVENTO)
+
+# ============================================================
+# 2.1 RECONSTRUÇÃO DE ESTRUTURAS JSON
+# Identifiquei uma incompatibilidade de schema entre Bronze e Silver. Como a Bronze passou a armazenar estruturas complexas em formato JSON para garantir estabilidade da #ingestão, realizei a reconstrução dessas estruturas na Silver utilizando from_json, preservando a semântica dos dados."
+# ============================================================
+
+schema_local_camara = """
+struct<
+    nome:string,
+    predio:string,
+    sala:string,
+    andar:string
+>
+"""
+
+df_bronze_eventos = (
+    df_bronze_eventos
+    .withColumn(
+        "localCamara",
+        F.from_json(
+            F.col("localCamara"),
+            schema_local_camara
+        )
+    )
+)
 
 
 # ============================================================
@@ -146,11 +176,23 @@ df_dim_evento = (
 # 7. ESCRITA DELTA SILVER
 # ============================================================
 
-(
-    df_dim_evento.write
-    .format("delta")
-    .mode("overwrite")
-    .option("overwriteSchema", "true")
-    .saveAsTable(TABELA_DESTINO)
-)
+if spark.catalog.tableExists(TABELA_DESTINO):
+
+    executar_merge(
+        df=df_dim_evento,
+        tabela_destino=TABELA_DESTINO,
+        condicao_merge="""
+            dest.sk_evento = orig.sk_evento
+        """
+    )
+
+else:
+
+    (
+        df_dim_evento.write
+        .format("delta")
+        .mode("overwrite")
+        .option("overwriteSchema", "true")
+        .saveAsTable(TABELA_DESTINO)
+    )
 
