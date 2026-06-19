@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 #  SILVER - DIM_ORGAO
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Construção da Dimensão Órgão a partir da Dimensão Evento
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -71,6 +73,7 @@ df_silver_evento_explodido = (
         F.col("orgao.nomePublicacao").cast("string").alias("nome_publicacao"),
         F.col("orgao.nomeResumido").cast("string").alias("nome_resumido")
     )
+    .filter(F.col("nk_orgao").isNotNull())
     .dropDuplicates(["nk_orgao"])
 )
 
