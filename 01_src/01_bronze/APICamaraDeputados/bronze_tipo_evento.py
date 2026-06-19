@@ -5,7 +5,8 @@
 
 # ============================================================
 # BRONZE_TIPO_EVENTO
-# Camada Bronze | Referência de tipos de eventos
+# Camada Bronze | Ingerir referência de tipos de eventos da Câmara dos Deputados
+# para uso como tabela de domínio (lookup).
 # Endpoint: /referencias/eventos/codTipoEvento
 # ============================================================
 
@@ -33,9 +34,8 @@ BATCH_ID = str(uuid.uuid4())
 
 TABELA_DESTINO = "desafio_final_t2.bronze.bronze_tipo_evento"
 
-
 # ============================================================
-# 3. INGESTÃO
+# 2. INGESTÃO
 # ============================================================
 pagina = 1
 
