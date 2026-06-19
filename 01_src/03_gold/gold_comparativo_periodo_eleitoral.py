@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_COMPARATIVO_PERIODO_ELEITORAL
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Constrói comparativo de eventos por período eleitoral
 # ============================================================
 
 from pyspark.sql import functions as F

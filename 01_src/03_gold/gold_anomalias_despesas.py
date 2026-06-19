@@ -1,7 +1,9 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - ANOMALIAS DESPESAS
-# Detecção de padrões e anomalias, foi implementada uma análise estatística baseada em Z-Score segmentada por categoria de despesa e unidade federativa. Dessa forma, # cada despesa é comparada com o comportamento esperado do seu próprio grupo, permitindo identificar gastos atípicos de forma mais justa e contextualizada.
+# Detecção de padrões e anomalias, foi implementada uma análise estatística baseada em Z-Score segmentada
+# por categoria de despesa e unidade federativa. Dessa forma, # cada despesa é comparada com o comportamento esperado do seu próprio grupo,
+# permitindo identificar gastos atípicos de forma mais justa e contextualizada.
 # ============================================================
 
 from pyspark.sql import functions as F
