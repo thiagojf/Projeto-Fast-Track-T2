@@ -6,7 +6,8 @@
 # ============================================================
 # BRONZE_DEPUTADOS
 # Projeto Final - Engenharia de Dados
-# Camada Bronze | Ingestão RAW API Câmara
+# Camada Bronze | Ingerir dados brutos da API da Câmara dos Deputados
+# mantendo fidelidade total ao payload original.
 # ============================================================
 
 # ============================================================
@@ -33,7 +34,7 @@ URL = f"{BASE_URL}{ENDPOINT}"
 # ----------------------------
 # Retry / Timeout
 # ----------------------------
-
+MAX_PAGINAS = 100
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 TIMEOUT = 30
@@ -67,7 +68,9 @@ TABELA_DESTINO = (
 pagina = 1
 
 while True:
-
+    if pagina > MAX_PAGINAS:
+            log_warning("Limite máximo de páginas atingido.")
+            break
     try:
 
         log_info(
