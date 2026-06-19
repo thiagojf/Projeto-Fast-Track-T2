@@ -5,7 +5,8 @@
 
 # ============================================================
 # BRONZE_FRENTES_MEMBROS
-# Camada Bronze | Ingestão RAW API Câmara
+# Camada Bronze | Ingerir membros das frentes parlamentares preservando
+# estrutura original da API com rastreabilidade total.
 # ============================================================
 
 import requests
