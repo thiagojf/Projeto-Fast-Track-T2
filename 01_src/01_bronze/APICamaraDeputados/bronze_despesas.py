@@ -5,7 +5,9 @@
 
 # ============================================================
 # BRONZE DESPESAS POR DEPUTADO
-# Camada Bronze | Ingestão RAW API Câmara
+# Projeto Final - Engenharia de Dados
+# Camada Bronze | Ingerir dados de despesas parlamentares da API da Câmara dos Deputados
+# mantendo fidelidade ao payload original (camada Bronze).
 # ============================================================
 
 import requests
@@ -21,23 +23,33 @@ from pyspark.sql import functions as F
 # ============================================================
 
 BASE_URL = "https://dadosabertos.camara.leg.br/api/v2"
-ENDPOINT_BASE = "/deputados"
-ENDPOINT_DESPESAS_TEMPLATE = "/deputados/{id}/despesas"
 
+# Endpoint dinâmico por deputado
+ENDPOINT_TEMPLATE = "/deputados/{id}/despesas"
+
+# Configurações de resiliência da API
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 TIMEOUT = 60
-ANOS_REFERENCIA = [2023, 2024, 2025, 2026, 2027]
+
+# Anos analisados (janela temporal da extração)
+ANOS_REFERENCIA = [2023, 2024, 2025]
+
+# Controle de paginação da API
 ITENS_POR_PAGINA = 50
 
-PIPELINE_VERSION = "1.0"
+# Governança do pipeline
+PIPELINE_VERSION = "1.1"
 BATCH_ID = str(uuid.uuid4())
 
+# Tabela destino Bronze
 TABELA_ORIGEM_DEPUTADOS = "desafio_final_t2.bronze.bronze_deputados"
 TABELA_DESTINO = "desafio_final_T2.bronze.bronze_despesas"
 
 # ============================================================
 # 2. OBTER IDS DOS DEPUTADOS
+# Extraímos os deputados da base Bronze já existente
+# para garantir consistência entre pipelines
 # ============================================================
 
 #ids_deputados = [204379]
