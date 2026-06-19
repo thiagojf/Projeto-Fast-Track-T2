@@ -5,8 +5,8 @@
 
 # ============================================================
 # BRONZE_VOTACOES_VOTOS
-# Camada Bronze | Votos dos Deputados em Votações
-# Realiza a ingestão dos votos individuais dos deputados em cada votação registrada na Câmara dos Deputados.
+# Camada Bronze | Ingerir votos individuais dos deputados em votações
+# preservando granularidade máxima (fact table base).
 # Endpoint: /votacoes/{id}/votos
 # ============================================================
 
@@ -49,7 +49,7 @@ id_votacao = [
         spark.table(TABELA_ORIGEM)
         .select("id")
         .distinct()
-        .toLocalIterator()
+        .collect()
     )
 ]
 
@@ -122,22 +122,15 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
 
         lista_votos  = []
 
-        for votacao in dados:
+        # ====================================================
+        # TRATAMENTO BRONZE
+        # ====================================================
+        for voto in dados:
+            voto["id_votacao"] = votacao_id
+            voto["source_endpoint_detail"] = endpoint_atual
+            voto["raw_payload"] = json.dumps(voto, ensure_ascii=False)
 
-            votacao["id_votacao"] = id_votacao
-
-            votacao[
-                "source_endpoint_detail"
-            ] = endpoint_atual
-
-            votacao["raw_payload"] = json.dumps(
-                votacao,
-                ensure_ascii=False
-            )
-
-            lista_votos.append(
-                votacao
-            )
+            lista_votos.append(voto)
 
         # ============================================
         # JSON -> DATAFRAME
@@ -158,7 +151,9 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
             [(item,) for item in json_strings],
             ["json_string"]
         )
-
+        # ============================================================
+        # 4.1. SCHEMA EXPLÍCITO
+        # ============================================================
         schema_votos = """
         struct<
             dataRegistroVoto:string,
@@ -208,7 +203,7 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
 
         # ============================================
         # ESCRITA DELTA
-        # Tabelas históricas  modo= "append" porque representam fatos que crescem ao longo do tempo.
+        # Tabelas históricas modo= "append" porque representam fatos que crescem ao longo do tempo.
         # ============================================
 
         salvar_delta(
