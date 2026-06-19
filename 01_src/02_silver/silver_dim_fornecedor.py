@@ -5,6 +5,8 @@
 
 # ============================================================
 #  SILVER - DIM_FORNECEDOR
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Constroe uma dimensão de fornecedores baseada nas despesas parlamentares.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -49,6 +51,7 @@ df_base_fornecedor = (
             F.col("nome_fornecedor")
         )
     )
+    # regra de tipo de pessoa robusta
     .withColumn(
         "tipo_pessoa",
         F.when(F.length("cnpj_cpf_fornecedor_limpo") == 14, F.lit("PJ"))

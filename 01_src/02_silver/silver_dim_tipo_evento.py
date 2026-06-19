@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 #  SILVER - DIM_TIPO_EVENTO
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Construção da dimensão de tipo de evento a partir da bronze_tipo_evento
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -23,7 +25,6 @@ PIPELINE_VERSION = "1.0"
 
 df_bronze = spark.table(TABELA_ORIGEM)
 
-
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
 # ============================================================
@@ -35,14 +36,10 @@ df_silver = (
         F.col("sigla").cast("string").alias("sigla_tipo_evento"),
         F.col("nome").cast("string").alias("nome_tipo_evento"),
         F.col("descricao").cast("string").alias("descricao_tipo_evento"),
-        F.col("raw_payload").cast("string").alias("raw_payload"),
         F.col("ingested_at").cast("timestamp").alias("bronze_ingested_at")
     )
     .dropDuplicates(["cod_tipo_evento"])
 )
-
-
-window_sk = Window.orderBy("cod_tipo_evento")
 
 # ============================================================
 # 4. SURROGATE KEY
@@ -67,7 +64,6 @@ df_dim_tipo_evento = (
         "sigla_tipo_evento",
         "nome_tipo_evento",
         "descricao_tipo_evento",
-        "raw_payload",
         "bronze_ingested_at",
         "updated_at",
         "pipeline_version"
