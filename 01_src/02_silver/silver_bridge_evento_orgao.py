@@ -25,6 +25,9 @@ PIPELINE_VERSION = "1.0"
 df_silver_dim_orgao = spark.table(TABELA_DIM_ORGAO)
 df_silver_dim_evento = spark.table(TABELA_DIM_EVENTO)
 
+# ====================================================
+# 2.1 SCHEMA EXPLÍCITO
+# ====================================================
 schema_orgaos = """
 array<
     struct<
