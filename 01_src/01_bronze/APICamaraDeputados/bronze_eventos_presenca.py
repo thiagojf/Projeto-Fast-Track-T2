@@ -5,7 +5,8 @@
 
 # ============================================================
 # BRONZE_EVENTOS_PRESENCA
-# Camada Bronze | Presença de deputados por evento
+# Camada Bronze | Ingerir dados de presença de deputados em eventos parlamentares
+# mantendo fidelidade ao payload original da API da Câmara.
 # Endpoint: /eventos/{id}/deputados
 # ============================================================
 
@@ -34,6 +35,7 @@ BATCH_ID = str(uuid.uuid4())
 
 # ============================================================
 # 2. OBTÉM IDS DOS EVENTOS
+# Extraímos eventos da camada Bronze para garantir consistência
 # ============================================================
 
 ids_eventos = [
@@ -196,33 +198,15 @@ for contador, id_evento in enumerate(ids_eventos, start=1):
             pipeline_version=PIPELINE_VERSION
         )
 
-        # ============================================
-        # DEFINIÇÃO MODO DE ESCRITA
-        # ============================================
-
-        if not spark.catalog.tableExists(
-            TABELA_DESTINO
-        ):
-
-            modo_escrita = "overwrite"
-
-        else:
-
-            modo_escrita = "append"
-
-        # ============================================
-        # ESCRITA DELTA
-        # ============================================
-
+        # ====================================================
+        # ESCRITA BRONZE (APPEND)
+        # ====================================================
         salvar_delta(
             df=spark_df,
             tabela=TABELA_DESTINO,
-            modo=modo_escrita,
+            modo="append",
             particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
+            colunas_particao=["ano_ingestao", "mes_ingestao"]
         )
 
         log_info(
@@ -251,23 +235,8 @@ for contador, id_evento in enumerate(ids_eventos, start=1):
 
 
 # ============================================================
-# 5. RESUMO EXECUÇÃO
+# 4. FINALIZAÇÃO
 # ============================================================
-
-log_info(
-    f"Processamento concluído. "
-    f"Eventos com erro: {len(lista_erros)}"
-)
-
-if lista_erros:
-
-    log_warning(
-        "Eventos com falha durante a execução:"
-    )
-
-    for erro in lista_erros:
-
-        print(erro)
 
 log_info(
     "Ingestão concluída com sucesso."
