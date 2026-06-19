@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_DEPUTADOS_TAXA_PRESENCA_EVENTO
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiliza a taxa de presença dos deputados em eventos, por tipo de evento e ano. 
 # ============================================================
 
 from pyspark.sql import functions as F

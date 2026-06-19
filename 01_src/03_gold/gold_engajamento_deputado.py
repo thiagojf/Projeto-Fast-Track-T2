@@ -5,7 +5,9 @@
 
 # DBTITLE 1,Análise de Engajamento dos Deputados
 # ============================================================
-# GOLD - Score de engajamento composto: presença × votações
+# GOLD - ENGAJAMENTO DEPUTADO
+# # Projeto Final - Engenharia de Dados
+# Camada Gold |  Score de engajamento composto: presença × votações
 # ============================================================
 
 from pyspark.sql import functions as F

@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_FRENTES_MEMBROS
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Constrói a tabela de membros das frentes parlamentares, enriquecida com informações dos deputados e das frentes.
 # ============================================================
 
 from pyspark.sql import functions as F

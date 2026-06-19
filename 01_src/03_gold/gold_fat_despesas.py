@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_FAT_DESPESAS
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Diponibiliza a tabela fato de despesas, enriquecendo os dados com as dimensões de deputado, fornecedor e categoria de despesa. 
 # ============================================================
 
 from pyspark.sql import functions as F

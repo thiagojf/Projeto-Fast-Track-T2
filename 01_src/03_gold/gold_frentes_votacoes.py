@@ -1,7 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - FRENTES VOTAÇÕES (REFATORADO)
-# Indicador de alinhamento de votação por frente parlamentar
+# # Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiliza Indicador de alinhamento de votação por frente parlamentar
 # ============================================================
 
 from pyspark.sql import functions as F

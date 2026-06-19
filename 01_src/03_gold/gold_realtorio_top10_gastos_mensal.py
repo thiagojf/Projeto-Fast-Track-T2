@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_TOP10_GASTOS_PARTIDO
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Constrói a tabela de gastos mensais por partido, classificando os 10 maiores gastos para cada mês.
 # ============================================================
 
 from pyspark.sql import functions as F

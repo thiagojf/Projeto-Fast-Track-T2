@@ -1,7 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD FRENTES ALINHAMENTO
-# Avaliar o grau de alinhamento dos membros de cada Frente Parlamentar
+# # Projeto Final - Engenharia de Dados
+# Camada Gold | Avalia o grau de alinhamento dos membros de cada Frente Parlamentar
 # nas votações da Câmara dos Deputados.
 # ============================================================
 

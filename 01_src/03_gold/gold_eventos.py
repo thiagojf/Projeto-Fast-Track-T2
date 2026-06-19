@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_EVENTOS
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiliza Eventos Legislativos
 # ============================================================
 
 from pyspark.sql import functions as F

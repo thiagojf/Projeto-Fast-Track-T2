@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - GOLD_DENSIDADE_EVENTOS_SEMANAS
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiliza uma visão temporal da distribuição de eventos legislativos por semana. 
 # ============================================================
 
 from pyspark.sql import functions as F

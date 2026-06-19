@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - Gold_ranking_deputados
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Constrói o ranking dos deputados com base na quantidade de frentes que participam
 # ============================================================
 
 from pyspark.sql import functions as F

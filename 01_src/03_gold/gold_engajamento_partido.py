@@ -5,9 +5,9 @@
 
 # ============================================================
 # GOLD - Engajamento por Partido
-# Consolidar métricas de engajamento dos deputados por partido,
-# gerando indicadores agregados para análises políticas e
-# dashboards executivos.
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Consolida métricas de engajamento dos deputados por partido,
+# gerando indicadores agregados.
 # ============================================================
 
 from pyspark.sql import functions as F

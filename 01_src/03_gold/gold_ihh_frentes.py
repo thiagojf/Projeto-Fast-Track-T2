@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - gold_ranking_deputados_frentes
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiuliza indicadores de diversidade das frentes parlamentares 
 # ============================================================
 
 from pyspark.sql import functions as F
