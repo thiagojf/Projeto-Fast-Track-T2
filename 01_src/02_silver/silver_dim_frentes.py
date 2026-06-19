@@ -5,6 +5,8 @@
 
 # ============================================================
 # SILVER - DIM_FRENTE
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Constroe uma dimensão de frentes da Câmara dos Deputados.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -74,6 +76,6 @@ executar_merge(
     df=df_dim_frentes,
     tabela_destino=TABELA_DESTINO,
     condicao_merge="""
-        dest.id_frente = orig.id_frente
+        dest.nk_frente = orig.nk_frente
     """
 )
