@@ -6,7 +6,8 @@
 # ============================================================
 # BRONZE_FRENTES
 # Projeto Final - Engenharia de Dados
-# Camada Bronze | Ingestão RAW API Câmara
+# Camada Bronze | Ingerir frentes parlamentares da API da Câmara dos Deputados
+# preservando dados brutos para modelagem posterior.
 # ============================================================
 
 # ============================================================
@@ -55,8 +56,21 @@ BATCH_ID = str(uuid.uuid4())
 # Delta Destination
 # ----------------------------
 
-TABELA_DESTINO = "desafio_final_T2.bronze.bronze_frentes"
+TABELA_DESTINO = "desafio_final_t2.bronze.bronze_frentes"
 
+# ============================================================
+# 3. SCHEMA BRONZE (evita inferência)
+# ============================================================
+
+SCHEMA_FRENTES = StructType([
+    StructField("id", LongType(), True),
+    StructField("uri", StringType(), True),
+    StructField("titulo", StringType(), True),
+    StructField("idLegislatura", LongType(), True),
+    StructField("dataCriacao", StringType(), True),
+    StructField("dataExtincao", StringType(), True),
+    StructField("raw_payload", StringType(), True)
+])
 
 # ============================================================
 # 3. INGESTÃO COM PAGINAÇÃO
@@ -115,10 +129,10 @@ while True:
         # RAW PAYLOAD
         # ============================================
 
-        for deputado in dados:
+        for frentes in dados:
 
-            deputado["raw_payload"] = json.dumps(
-                deputado,
+            frentes["raw_payload"] = json.dumps(
+                frentes,
                 ensure_ascii=False
             )
 
@@ -127,7 +141,8 @@ while True:
         # ============================================
 
         spark_df = spark.createDataFrame(
-            dados
+            dados,
+            schema=SCHEMA_FRENTES
         )
 
         # ============================================
