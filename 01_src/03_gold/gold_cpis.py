@@ -1,7 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # GOLD - DETALHES CPI
-# Disponibilizar informações consolidadas sobre Comissões Parlamentares de Inquérito (CPIs) para consumo analítico.
+# Projeto Final - Engenharia de Dados
+# Camada Gold | Disponibiliza informações consolidadas sobre Comissões Parlamentares de Inquérito (CPIs) para consumo analítico.
 # ============================================================
 
 from pyspark.sql import functions as F
