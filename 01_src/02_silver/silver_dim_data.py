@@ -1,7 +1,8 @@
 # Databricks notebook source
 # ============================================================
 # SILVER - DIM_DATA
-# Tabela calendário reutilizável
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Tabela calendário reutilizável
 # ============================================================
 
 from pyspark.sql import functions as F

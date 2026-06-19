@@ -9,6 +9,8 @@
 
 # ============================================================
 #  SILVER - DIM_DESPESAS
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Construir tabela Silver de despesas parlamentares da Câmara dos Deputados.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -33,7 +35,7 @@ PIPELINE_VERSION = "1.0"
 df_bronze = spark.table(TABELA_ORIGEM)
 
 
-
+# Normalização de dados financeiros
 df_dim_despesas = (
     df_bronze
     .select(
@@ -69,6 +71,7 @@ df_dim_despesas = (
 
 # ============================================================
 # 5. CAMPOS DERIVADOS DE DATA
+# Enriquecimento temporal
 # ============================================================
 
 df_dim_despesas = (
@@ -88,6 +91,7 @@ df_dim_despesas = (
     df_dim_despesas
     .withColumn("updated_at", F.current_timestamp())
     .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    #Criação de chave de negócio (nk_despesa) utilizando a função de hash SHA-256 para garantir unicidade e integridade dos registros, considerando os principais atributos que definem uma despesa.
     .withColumn("nk_despesa",sha2(concat_ws("|",F.col("nk_deputado"),F.col("cnpj_cpf_fornecedor"),F.col("data_documento"),F.col("valor_liquido"),F.col("cod_documento"),F.col("num_documento"),F.col("cod_lote")),256))
     .select(
             "nk_despesa",

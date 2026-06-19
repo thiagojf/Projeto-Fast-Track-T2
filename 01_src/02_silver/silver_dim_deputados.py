@@ -5,6 +5,8 @@
 
 # ============================================================
 # SILVER - DIM_DEPUTADO
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Cria dimensão de deputados com atributos políticos e contato.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -30,6 +32,7 @@ df_bronze = spark.table(TABELA_ORIGEM)
 
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
+# Normaliza dados de deputados
 # ============================================================
 
 df_silver = (
@@ -57,6 +60,7 @@ df_silver = (
 
 # ============================================================
 # 4. SCD TYPE 2 SIMPLIFICADO
+# Implementa (parcialmente) SCD Type 2 para acompanhar mudanças de partido, estado e legislatura dos deputados.
 # ============================================================
 
 window_sk = Window.orderBy("nk_deputado", "sigla_partido", "sigla_uf", "id_legislatura")
@@ -92,6 +96,7 @@ df_dim_deputado = (
 
 # ============================================================
 # 5. ESCRITA DELTA SILVER
+# Realiza merge incremental na dimensão de deputados, atualizando registros existentes e inserindo novos conforme necessário.
 # ============================================================
 
 executar_merge(

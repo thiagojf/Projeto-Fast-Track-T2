@@ -1,6 +1,8 @@
 # Databricks notebook source
 # ============================================================
 #  SILVER - DIM_CATEGORIA_DESPESA
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Cria uma dimensão de categorias de despesa a partir da tabela de despesas.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -26,6 +28,7 @@ df_bronze = spark.table(TABELA_ORIGEM)
 
 # ============================================================
 # 3. TRANSFORMAÇÃO SILVER
+# Extrai tipos únicos de despesa
 # ============================================================
 
 df_silver_tipo_despesa = (
@@ -38,6 +41,7 @@ df_silver_tipo_despesa = (
 
 # ============================================================
 # 4. SURROGATE KEY
+# Cria surrogate key para modelagem dimensional
 # ============================================================
 
 window_sk = Window.orderBy("nk_categoria_despesa")
