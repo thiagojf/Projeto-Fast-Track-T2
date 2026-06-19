@@ -5,7 +5,8 @@
 
 # ============================================================
 # BRONZE_VOTACOES_VOTOS
-# Camada Bronze | Presença de deputados por evento
+# Camada Bronze | Votos dos Deputados em Votações
+# Realiza a ingestão dos votos individuais dos deputados em cada votação registrada na Câmara dos Deputados.
 # Endpoint: /votacoes/{id}/votos
 # ============================================================
 
@@ -21,8 +22,6 @@ from pyspark.sql import functions as F
 
 BASE_URL = "https://dadosabertos.camara.leg.br/api/v2"
 
-TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_votacoes"
-TABELA_DESTINO = "desafio_final_t2.bronze.bronze_votacoes_votos"
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -31,9 +30,13 @@ TIMEOUT = 30
 PIPELINE_VERSION = "1.0"
 BATCH_ID = str(uuid.uuid4())
 
+## Tabelas de origem e destino
+TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_votacoes"
+TABELA_DESTINO = "desafio_final_t2.bronze.bronze_votacoes_votos"
 
 # ============================================================
-# 2. OBTÉM IDS DOS EVENTOS
+# 2. OBTÉM IDS DAS VOTAÇÕES PARA PROCESSAR
+# Recupera os IDs das votações previamente carregadas para enriquecimento dos dados com os votos individuais dos deputados.
 # ============================================================
 
 #id_votacao = ["2085970-127"]
@@ -46,7 +49,7 @@ id_votacao = [
         spark.table(TABELA_ORIGEM)
         .select("id")
         .distinct()
-        .collect()
+        .toLocalIterator()
     )
 ]
 
@@ -65,7 +68,8 @@ lista_erros = []
 
 
 # ============================================================
-# 4. PROCESSAMENTO DOS EVENTOS
+# 4. PROCESSAMENTO DOS VOTOS
+# Consulta o endpoint de votos para cada votação retornando o posicionamento individual dos deputados
 # ============================================================
 
 for contador, id_votacao in enumerate(id_votacao, start=1):
@@ -203,28 +207,19 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
         )
 
         # ============================================
-        # DEFINIÇÃO MODO DE ESCRITA
-        # ============================================
-
-        if not spark.catalog.tableExists(
-            TABELA_DESTINO
-        ):
-
-            modo_escrita = "overwrite"
-
-        else:
-
-            modo_escrita = "append"
-
-        # ============================================
         # ESCRITA DELTA
+        # Tabelas históricas  modo= "append" porque representam fatos que crescem ao longo do tempo.
         # ============================================
 
         salvar_delta(
             df=spark_df,
             tabela=TABELA_DESTINO,
-            modo=modo_escrita,
-            particionar=False
+            modo= "append",
+            particionar=True,
+            colunas_particao=[
+                "ano_ingestao",
+                "mes_ingestao"
+            ]
         )
 
         log_info(
@@ -241,7 +236,7 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
 
         lista_erros.append({
 
-            "id_evento": id_votacao,
+            "id_votacao": id_votacao,
 
             "endpoint": endpoint_atual,
 
