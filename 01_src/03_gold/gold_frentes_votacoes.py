@@ -1,22 +1,22 @@
+# Databricks notebook source
 # ============================================================
-# GOLD - GOLD_FRENTES_VOTACOES
+# GOLD - FRENTES VOTAÇÕES (REFATORADO)
+# Indicador de alinhamento de votação por frente parlamentar
 # ============================================================
 
 from pyspark.sql import functions as F
-
 
 # ============================================================
 # 1. CONFIGURAÇÕES
 # ============================================================
 
 TABELA_DESTINO = "desafio_final_t2.gold.gold_frentes_votacoes"
-
-PIPELINE_VERSION = "1.0"
-
+PIPELINE_VERSION = "1.1"
 
 # ============================================================
-# 2. LEITURA E TRANSFORMAÇÃO
+# 2. CÁLCULO BASE DE VOTOS
 # ============================================================
+
 df_gold_frentes_votacoes = spark.sql("""
 WITH base_votos AS (
 
@@ -32,73 +32,91 @@ WITH base_votos AS (
     INNER JOIN desafio_final_t2.silver.dim_votos_votacoes voto
         ON dep_frente.nk_deputado = voto.nk_deputado
 
-),voto_majoritario AS (
+),
+-- 2.1 AGREGAÇÃO DE VOTOS POR OPÇÃO
+voto_aggregado AS (
 
     SELECT
         nk_frente,
         id_votacao,
         voto,
-        COUNT(*) AS qtde_votos,
-        -- Aqui contamos quantos votos de cada tipo ocorreram em cada votação.
-        -- Em caso de empate é considerado o primeiro voto retornado pela ordenação da janela.
-        DENSE_RANK() OVER (
-            PARTITION BY nk_frente, id_votacao
-            ORDER BY COUNT(*) DESC
-        ) AS rn
+        COUNT(*) AS qtde_votos
     FROM base_votos
-    GROUP BY
-        nk_frente,
-        id_votacao,
-        voto
+    GROUP BY nk_frente, id_votacao, voto
 
-),alinhamento AS (
--- Agora calculamos quem acompanhou o voto majoritário.
+),
+-- 2.2 IDENTIFICA VOTO MAJORITÁRIO (DESEMPATE DETERMINÍSTICO)
+voto_majoritario AS (
+
+    SELECT *
+    FROM (
+        SELECT
+            nk_frente,
+            id_votacao,
+            voto,
+            qtde_votos,
+            ROW_NUMBER() OVER (
+                PARTITION BY nk_frente, id_votacao
+                ORDER BY qtde_votos DESC, voto ASC
+            ) AS rn
+        FROM voto_aggregado
+    ) t
+    WHERE rn = 1
+
+),
+-- 2.3 CÁLCULO DE ALINHAMENTO
+alinhamento_base AS (
+
     SELECT
         b.nk_frente,
         b.titulo_frente,
         b.id_votacao,
-
         COUNT(*) AS total_deputados,
-
         SUM(
             CASE
-                WHEN b.voto = vm.voto
-                THEN 1
+                WHEN b.voto = vm.voto THEN 1
                 ELSE 0
             END
         ) AS deputados_alinhados
-
     FROM base_votos b
-
     INNER JOIN voto_majoritario vm
         ON b.nk_frente = vm.nk_frente
        AND b.id_votacao = vm.id_votacao
-       AND vm.rn = 1 -- filtro de voto majoritário iguais
-
     GROUP BY
         b.nk_frente,
         b.titulo_frente,
         b.id_votacao
 
+),
+-- 2.4 INDICADOR FINAL
+final AS (
+
+    SELECT
+        nk_frente,
+        titulo_frente,
+        id_votacao,
+        deputados_alinhados,
+        total_deputados,
+
+        ROUND(
+            deputados_alinhados * 100.0 / total_deputados,
+            2
+        ) AS percent_alinhamento
+
+    FROM alinhamento_base
+
 )
 
 SELECT
-    nk_frente,
-    titulo_frente,
-    id_votacao,
-    deputados_alinhados,
-    total_deputados,
-    ROUND(
-        deputados_alinhados * 100.0 / total_deputados,2
-    ) AS percent_alinhamento,
+    *,
     CASE
-    WHEN percent_alinhamento >= 80 THEN 'Alto'
-    WHEN percent_alinhamento >= 60 THEN 'Médio'
-    ELSE 'Baixo'
-END AS faixa_alinhamento
-FROM alinhamento
-""")
+        WHEN percent_alinhamento >= 80 THEN 'Alto'
+        WHEN percent_alinhamento >= 60 THEN 'Médio'
+        ELSE 'Baixo'
+    END AS faixa_alinhamento
 
+FROM final
+""")
 
 # ============================================================
 # 3. AUDITORIA
@@ -108,8 +126,9 @@ df_gold_frentes_votacoes = (
     df_gold_frentes_votacoes
     .withColumn("updated_at", F.current_timestamp())
     .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    .withColumn("source_layer", F.lit("silver"))
+    .withColumn("source_system", F.lit("camara_dos_deputados"))
 )
-
 
 # ============================================================
 # 4. ESCRITA DELTA GOLD
