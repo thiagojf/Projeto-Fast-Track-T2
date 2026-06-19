@@ -6,6 +6,8 @@
 # Databricks notebook source
 # ============================================================
 # SILVER - DIM_EVENTO
+# Projeto Final - Engenharia de Dados
+# Camada Silver | Constroe uma dimensão de eventos da Câmara dos Deputados.
 # ============================================================
 
 from pyspark.sql import functions as F
@@ -32,7 +34,9 @@ df_tipo_evento = spark.table(TABELA_TIPO_EVENTO)
 
 # ============================================================
 # 2.1 RECONSTRUÇÃO DE ESTRUTURAS JSON
-# Identifiquei uma incompatibilidade de schema entre Bronze e Silver. Como a Bronze passou a armazenar estruturas complexas em formato JSON para garantir estabilidade da #ingestão, realizei a reconstrução dessas estruturas na Silver utilizando from_json, preservando a semântica dos dados."
+# Identifiquei uma incompatibilidade de schema entre Bronze e Silver. 
+# Como a Bronze passou a armazenar estruturas complexas em formato JSON para garantir estabilidade da 
+# ingestão, realizei a reconstrução dessas estruturas na Silver utilizando from_json, preservando a semântica dos dados."
 # ============================================================
 
 schema_local_camara = """
@@ -182,7 +186,7 @@ if spark.catalog.tableExists(TABELA_DESTINO):
         df=df_dim_evento,
         tabela_destino=TABELA_DESTINO,
         condicao_merge="""
-            dest.sk_evento = orig.sk_evento
+            dest.nk_evento = orig.nk_evento
         """
     )
 
