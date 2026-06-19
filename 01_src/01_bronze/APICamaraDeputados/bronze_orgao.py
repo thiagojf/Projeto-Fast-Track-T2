@@ -46,7 +46,7 @@ pagina = 1
 lista_orgaos = []
 
 try:
-
+    # Realiza paginação até que a API retorne uma página vazia
     while True:
 
         log_info(
@@ -91,9 +91,10 @@ try:
         # ============================================
 
         for orgao in dados:
-
+            # Mantém a origem do dado para rastreabilidade futura
             orgao["source_endpoint_detail"] = ENDPOINT
-
+            
+            # Armazena o payload original para auditoria, reprocessamento e troubleshooting 
             orgao["raw_payload"] = json.dumps(
                 orgao,
                 ensure_ascii=False
