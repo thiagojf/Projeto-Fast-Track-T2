@@ -8,6 +8,14 @@
 # Projeto Final - Engenharia de Dados
 # Camada Bronze | Ingerir dados brutos da API da Câmara dos Deputados
 # mantendo fidelidade total ao payload original.
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por ID (captura atualizações)
+#
+# Motivo: Dados de deputados são master data que sofrem atualizações
+# (partido, email, foto, status). MERGE permite capturar essas mudanças
+# sem duplicação.
 # ============================================================
 
 # ============================================================
@@ -62,7 +70,15 @@ TABELA_DESTINO = (
 
 
 # ============================================================
-# 3. INGESTÃO COM PAGINAÇÃO
+# 3. CONTROLE DE ESCRITA
+# ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
+
+# ============================================================
+# 4. INGESTÃO COM PAGINAÇÃO
 # ============================================================
 
 pagina = 1
@@ -146,19 +162,43 @@ while True:
         )
 
         # ============================================
-        # ESCRITA DELTA
+        # DEFINIÇÃO DO MODO DE ESCRITA
+        # Primeira carga: overwrite (limpa a tabela)
+        # Subsequentes: MERGE (upsert por ID para capturar updates)
         # ============================================
 
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo="append",
-            particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo="overwrite",
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        else:
+            # Cargas subsequentes: MERGE para capturar atualizações
+            # Chave: ID do deputado (é única no sistema)
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id"],
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+
+        primeira_carga = False
+
+        # ============================================
+        # ESCRITA DELTA
+        # ============================================
 
         log_info(
             f"Página {pagina} gravada com sucesso."
