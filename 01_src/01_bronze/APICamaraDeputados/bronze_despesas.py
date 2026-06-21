@@ -8,6 +8,14 @@
 # Projeto Final - Engenharia de Dados
 # Camada Bronze | Ingerir dados de despesas parlamentares da API da Câmara dos Deputados
 # mantendo fidelidade ao payload original (camada Bronze).
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por [nk_deputado, ano_referencia, codDocumento]
+#
+# Motivo: Despesas podem ser corrigidas/atualizadas pela API. Na primeira execução,
+# sobrescrevemos para começar limpo. Em execuções posteriores, usamos MERGE para
+# evitar duplicação ao reprocessar períodos (anos/meses sobrepostos).
 # ============================================================
 
 import requests
@@ -186,7 +194,8 @@ try:
                 time.sleep(0.2)
 
         # ====================================================
-        # Valida a lista de despesas por dputado e retorna se temos dados para persistir não encontrano retorna um log_warning mas continua o processo
+        # Valida a lista de despesas por dputado e retorna se temos dados para persistir
+        # não encontrano retorna um log_warning mas continua o processo
         # para processar as despeas do proximo deputado
         # ====================================================
 
@@ -273,29 +282,40 @@ try:
         )
 
         # ====================================================
-        # ESCRITA DELTA
-        # Na p1rimeira execução vai gravar no modo overwrite
-        # Nas demais gravações grava no modo append
-        # Dessa forma conseguimos gravar deputado por deputado sem recriar a tabela.
+        # DEFINIÇÃO DO MODO DE ESCRITA
+        # Primeira carga: overwrite (limpa a tabela)
+        # Subsequentes: MERGE (upsert por chave para evitar duplicatas)
         # ====================================================
-        modo_escrita = (
-            "overwrite"
-            if primeira_carga
-            else "append"
-        )
 
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo=modo_escrita,
-            particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo="overwrite",
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        else:
+            # Cargas subsequentes: MERGE para evitar duplicatas
+            # Chaves: deputado (nk_deputado), ano de referência, e código do documento
+            # Esta combinação identifica uma despesa única
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["nk_deputado", "ano_referencia", "codDocumento"],
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
         # ====================================================
-        # Após a primeira gravação a tabela já existe e a varivael primeira_carga passa aser FALSE e as próximas gravações serão append.
+        # Após a primeira gravação a tabela já existe e a varivael primeira_carga passa aser FALSE e as próximas gravações serão MERGE.
         # ====================================================
         primeira_carga = False
 
