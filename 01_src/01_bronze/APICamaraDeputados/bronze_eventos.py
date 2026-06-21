@@ -7,6 +7,13 @@
 # BRONZE - EVENTOS
 # Camada Bronze | Ingerir eventos parlamentares da API da Câmara dos Deputados
 # preservando o payload original (raw data) com máxima fidelidade.
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por ID (permite correções)
+#
+# Motivo: Eventos com filtro de data podem ser reprocessados com periodos
+# sobrepostos. MERGE evita duplicação quando janelas temporais se sobrepõem.
 # ============================================================
 
 import json
@@ -41,7 +48,16 @@ ITENS_POR_PAGINA = 100
 
 
 # ============================================================
-# 2. INGESTÃO
+# 2. CONTROLE DE ESCRITA
+# ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
+
+
+# ============================================================
+# 3. INGESTÃO
 # ============================================================
 
 pagina = 1
@@ -122,17 +138,43 @@ while True:
         )
 
         # ====================================================
-        # ESCRITA BRONZE (append seguro)
+        # DEFINIÇÃO DO MODO DE ESCRITA
+        # Primeira carga: overwrite
+        # Subsequentes: MERGE (upsert por ID)
         # ====================================================
-        modo_escrita = "append"
 
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo=modo_escrita,
-            particionar=True,
-            colunas_particao=["ano_ingestao", "mes_ingestao"]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            modo_escrita = "overwrite"
+            usar_merge = False
+        else:
+            # Cargas subsequentes: MERGE para evitar duplicatas
+            # de períodos sobrepostos
+            modo_escrita = None
+            usar_merge = True
+
+        # ====================================================
+        # ESCRITA BRONZE (com suporte a MERGE)
+        # ====================================================
+        if usar_merge:
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id"],
+                particionar=True,
+                colunas_particao=["ano_ingestao", "mes_ingestao"]
+            )
+        else:
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo=modo_escrita,
+                particionar=True,
+                colunas_particao=["ano_ingestao", "mes_ingestao"]
+            )
+
+        primeira_carga = False
 
         log_info(f"Página {pagina} gravada com sucesso")
 
