@@ -7,6 +7,13 @@
 # BRONZE_FRENTES_MEMBROS
 # Camada Bronze | Ingerir membros das frentes parlamentares preservando
 # estrutura original da API com rastreabilidade total.
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT (captura mudanças de composição)
+#
+# Motivo: Composição de frentes muda (entrada/saída de membros).
+# MERGE permite capturar essas mudanças sem duplicação.
 # ============================================================
 
 import requests
@@ -39,6 +46,10 @@ TABELA_DESTINO = "desafio_final_T2.bronze.bronze_frentes_membros"
 # ============================================================
 # 2. OBTER IDS DAS FRENTES JÁ INGESTADAS
 # ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
 
 df_frentes = spark.table(TABELA_ORIGEM_FRENTES)
 
@@ -148,21 +159,45 @@ try:
         batch_id=BATCH_ID,
         pipeline_version=PIPELINE_VERSION
     )
-    
+     
+    # ============================================
+    # DEFINIÇÃO DO MODO DE ESCRITA
+    # Primeira carga: overwrite
+    # Subsequentes: MERGE (upsert)
+    # ============================================
+
+    if primeira_carga:
+        # Primeira carga: sobrescreve para começar limpo
+        salvar_delta(
+            df=spark_df,
+            tabela=TABELA_DESTINO,
+            modo="overwrite",
+            particionar=True,
+            colunas_particao=[
+                "ano_ingestao",
+                "mes_ingestao"
+            ]
+        )
+    else:
+        # Cargas subsequentes: MERGE para capturar composição dinâmica
+        # Chaves: ID da frente + ID do deputado + data início
+        salvar_delta(
+            df=spark_df,
+            tabela=TABELA_DESTINO,
+            usar_merge=True,
+            chaves_merge=["id_frente", "id", "dataInicio"],
+            particionar=True,
+            colunas_particao=[
+                "ano_ingestao",
+                "mes_ingestao"
+            ]
+        )
+
+    primeira_carga = False
+     
     # ============================================
     # ESCRITA DELTA
     # ============================================
-
-    salvar_delta(
-        df=spark_df,
-        tabela=TABELA_DESTINO,
-        modo="append",
-        particionar=True,
-        colunas_particao=[
-            "ano_ingestao",
-            "mes_ingestao"
-        ]
-    )
 
     log_info(
         "Dados gravados com sucesso."
