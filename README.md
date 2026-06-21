@@ -5,6 +5,7 @@
 Este projeto tem como objetivo construir uma plataforma analítica legislativa utilizando arquitetura Medalhão (Bronze, Silver e Gold) desenvolvido utilizando Databricks, PySpark a partir de dados públicos da Câmara dos Deputados.
 
 O projeto contempla ingestão, tratamento, modelagem dimensional e disponibilização de tabelas analíticas para consumo em ferramentas de Business Intelligence, Analytics e Data Science.
+
 ---
 
 # Arquitetura do Projeto
@@ -29,9 +30,13 @@ O projeto contempla ingestão, tratamento, modelagem dimensional e disponibiliza
 | Endpoint                           | Finalidade            | Camada |
 | ---------------------------------- | --------------------- | ------ |
 | /deputados                         | Cadastro deputados    | Bronze |
+| //deputados/{id}                   | Cadastro deputados    | Bronze |
+| /deputados/{id}/despesas           | Cadastro deputados    | Bronze |
 | /frentes                           | Frentes parlamentares | Bronze |
+| /frentes/{id}                      | Membros das frentes   | Bronze |
 | /frentes/{id}/membros              | Membros das frentes   | Bronze |
 | /eventos                           | Eventos legislativos  | Bronze |
+| /eventos/{id}                      | Presença em eventos   | Bronze |
 | /eventos/{id}/deputados            | Presença em eventos   | Bronze |
 | /referencias/eventos/codTipoEvento | Tipos de evento       | Bronze |
 | /deputados/{id}/despesas           | CEAP                  | Bronze |
@@ -40,141 +45,349 @@ O projeto contempla ingestão, tratamento, modelagem dimensional e disponibiliza
 ---
 # Arquitetura Medalhão
 
+### Dimensões
+
+* dim_deputado
+* dim_fornecedor
+* dim_categoria_despesa
+* dim_frente
+* dim_orgao
+* dim_evento
+* dim_tipo_evento
+* dim_votos_votacoes
+* dim_cpi
+
+### Fatos
+
+* fato_despesas
+
+### Tabelas Bridge
+
+* bridge_frente_deputado
+
+---
+
 ## Camada Bronze
 
-Camada responsável pela ingestão RAW dos dados provenientes das APIs públicas da Câmara.
+### Principais tabelas
 
-Principais características:
+#### Frentes
 
-- Dados semi-estruturados
-- Retenção do payload original
-- Auditoria de ingestão
-- Controle de paginação
-- Retry automático
-- Particionamento
+* bronze_frentes
+* bronze_frentes_membros
+
+#### Eventos
+
+* bronze_eventos
+* bronze_eventos_presenca
+
+#### Despesas
+
+* bronze_despesas
+
+#### Votações
+
+* bronze_votacoes
+* bronze_votacoes_votos
+
+#### Órgãos
+
+* bronze_orgaos
+* bronze_orgaos_detalhe
+
+### Auditoria
+
+Todas as tabelas Bronze armazenam:
+
+* raw_payload
+* batch_id
+* pipeline_version
+* data/hora de ingestão
 
 ---
 
 ## Camada Silver
 
-Camada responsável por tratamento, limpeza e modelagem dos dados.
+### Principais transformações
 
-Principais atividades:
+#### Deputados
 
-- Tipagem
-- Padronização de colunas
-- Deduplicação
-- Criação de dimensões
-- Criação de bridges
-- Enriquecimento dos dados
+Normalização dos dados cadastrais.
+
+#### Frentes
+
+Construção da dimensão de frentes e bridge de relacionamento com deputados.
+
+#### Eventos
+
+Construção das dimensões:
+
+* Evento
+* Órgão
+* Tipo de Evento
+
+#### Despesas
+
+Construção da fato_despesas.
+
+##### Controle de duplicidade
+
+Foi utilizada chave hash SHA-256:
+
+```python
+sha2(
+ concat_ws(
+  "|",
+  nk_deputado,
+  cnpj_cpf_fornecedor,
+  data_documento,
+  valor_liquido,
+  cod_documento,
+  num_documento,
+  cod_lote
+ ),
+256
+)
+```
+
+Resultado após validação:
+
+* 3075 registros
+* 3075 chaves únicas
+
+#### Votações
+
+Construção da dimensão consolidada:
+
+* votação
+* evento relacionado
+* deputado votante
+* tipo de voto
+
+#### CPI
+
+Construção da dimensão específica de CPIs.
 
 ---
 
 ## Camada Gold
 
-Camada analítica para consumo de dashboards e análises.
+### Módulo 1 — Atlas das Frentes Parlamentares
 
-Principais entregas:
+Status: ✅ Entregue
 
-- Indicadores parlamentares
-- Ranking de deputados
-- Taxa de presença
-- Densidade de eventos
-- Top gastos por partido
-- Comparativos eleitorais
+Tabelas:
+
+* gold_frentes
+
+Indicadores:
+
+* Quantidade de membros
+* Diversidade partidária
+* Índice de Herfindahl (IHH)
+---
+### Módulo 2 — Calendário Analítico de Eventos
+
+Status: ✅ Entregue
+
+Tabelas:
+
+* gold_eventos
+
+Indicadores:
+
+* Eventos por período
+* Eventos por órgão
+* Frequência parlamentar
 
 ---
 
-# Módulos Entregues
+### Módulo 3 — Correlação entre Frentes e Votações
 
-## 1. Atlas das Frentes Parlamentares
+Status: ✅ Entregue
 
-### Objetivos
+Tabelas:
 
-- Mapear frentes parlamentares
-- Identificar diversidade partidária
-- Identificar deputados com maior participação em frentes
+* gold_frentes_votacoes
+* gold_frentes_alinhamento
 
-### Principais tabelas
+Indicadores:
 
-- gold_frentes_membros
-- gold_ranking_deputados
-- bridge_frente_deputado
-
-### Destaques Analíticos
-
-- Índice de Herfindahl-Hirschman (IHH)
-- Ranking de deputados por participação
-- Interseção entre frentes
+* Percentual de alinhamento interno
+* Voto majoritário por frente
+* Ranking de alinhamento
 
 ---
 
-## 2. Calendário Analítico Legislativo
+### Módulo 4 — Raio-X da CEAP
 
-### Objetivos
+Status: ✅ Entregue
 
-- Consolidar eventos legislativos
-- Analisar presença parlamentar
-- Identificar comportamento legislativo em períodos eleitorais
+Tabelas:
 
-### Principais tabelas
+* gold_gastos_deputados
 
-- gold_eventos
-- gold_taxa_presenca_eventos
-- gold_densidade_eventos_semana
-- gold_comparativo_periodo_eleitoral
+Indicadores:
 
-### Destaques Analíticos
-
-- Taxa de participação em eventos
-- Densidade semanal de eventos
-- Comparativo antes/durante período eleitoral
+* Gastos por deputado
+* Gastos por fornecedor
+* Gastos por categoria
+* Detecção de anomalias utilizando Z-Score
 
 ---
 
-## 4. Raio-X de Gastos CEAP
+### Módulo 5 — Pipeline de Auditoria de CPIs
 
-### Objetivos
+Status: ✅ Entregue (com limitações da API)
 
-- Ingestão de despesas parlamentares
-- Modelagem dimensional financeira
-- Ranking de gastos por partido
+Tabelas:
 
-### Principais tabelas
+* dim_cpi
+* gold_cpis
 
-- despesas
-- dim_fornecedor
-- dim_categoria_despesa
-- fat_despesas
-- top_gastos_partido
+Indicadores disponíveis:
 
-### Destaques Analíticos
-
-- Top 10 gastos por partido
-- Ranking mensal de despesas
-- Análise de fornecedores
+* Cadastro de CPIs
+* Quantidade de CPIs
+* Tipos de órgãos CPI
 
 ---
 
+### Módulo 6 — Monitor de Presença e Engajamento Parlamentar
+
+Status: ✅ Entregue
+
+Tabelas:
+
+* gold_engajamento_deputado
+* gold_engajamento_partido
+
+Indicadores:
+
+* Participação em eventos
+* Participação em votações
+* Ranking de engajamento
+* Score de engajamento por partido
+
+## Principais Indicadores
+
+### Índice de Herfindahl (IHH)
+
+Utilizado para medir diversidade partidária das frentes parlamentares.
+
+Interpretação:
+* IHH baixo → maior diversidade partidária
+* IHH alto → concentração em poucos partidos
+
+### Percentual de Alinhamento
+
+```text
+Deputados alinhados
+-------------------
+Total de deputados votantes
+```
+### Score de Engajamento
+
+```text
+40% Presença em Eventos
++
+60% Participação em Votações
+```
+
+
+### Score de Anomalia
+
+Baseado em Z-Score por:
+
+* Categoria da despesa
+* UF do deputado
+
+---
+## Estratégia de Persistência
+
+O projeto utiliza três estratégias:
+
+#### OVERWRITE
+
+Utilizado em tabelas de domínio e referência, onde cada execução representa o estado completo da fonte.
+
+Exemplos:
+- bronze_orgaos
+- bronze_tipo_evento
+
+#### MERGE (UPSERT)
+
+Utilizado em entidades transacionais ou passíveis de atualização.
+
+Exemplos:
+- bronze_deputados
+- bronze_eventos
+- bronze_votacoes
+- bronze_votacoes_votos
+- bronze_eventos_presenca
+- bronze_despesas
+
+Objetivos:
+- evitar duplicidade
+- garantir idempotência
+- permitir reprocessamentos
+
+#### APPEND
+
+Utilizado apenas durante a fase inicial de desenvolvimento para validação da ingestão.
+
+
+## Decisões Arquiteturais
+
+### Delta Lake
+
+Escolhido para:
+
+* ACID Transactions
+* Versionamento
+* Performance
+* Compatibilidade com Databricks
+
+### SHA-256
+
+Utilizado para deduplicação das despesas parlamentares.
+
+### Arquitetura Bronze → Silver → Gold
+
+Separação clara entre:
+
+* Ingestão
+* Tratamento
+* Consumo analítico
+
+### Overwrite nas Golds
+
+Como as tabelas Gold são derivadas das Silver, optou-se pela reconstrução completa para evitar inconsistências.
+
+---
 # Estrutura de Diretórios
 
 ```text
-Projeto/
+Projeto-Fast-Track-T2
 │
-├── Notebooks/
-│   ├── Modulos/
-│   |    ├── bronze/
-│   |    ├── silver/
-│   |    ├── gold/
-│   |    └── views/
-|   |
-│   └── Orquestração/
+├── 00_setup
+│
+├── 01_src/
+│   ├── 01_bronze/
+│   │   ├── APICamaraDeputados/
+│   │   └── OutraAPIs/
+│   ├── 02_silver/
+│   └── 03_gold/
+│
+├── 50_jobs/
+│
+├── 99_utils/
 │
 ├── Docs/
 │   ├── Arquitetura_Medalhao_Projeto.png
 │   └── dicionario_dados.md
 │
-├── README.md
+└── README.md
 ```
 
 ---
@@ -190,6 +403,10 @@ Projeto/
 5. bronze_eventos_presenca
 6. bronze_tipo_evento
 7. bronze_despesas
+8. bronze_orgao
+9. bronze_orgaos_detalhe
+10. bronze_votacoes
+11. bronze_votacoes_votos
 
 ---
 
@@ -236,19 +453,7 @@ Os principais desafios enfrentados durante o desenvolvimento foram:
 - Relacionamentos muitos-para-muitos
 - Governança de dados
 
----
 
-# Próximos Passos
-
-Como evolução futura do projeto:
-
-- Módulo completo de votações
-- Correlação entre votos e frentes parlamentares
-- Pipeline de CPIs
-- Detecção de anomalias em despesas
-- Dashboards Power BI
-- Incremental refresh
-- Data Quality automatizado
 
 ---
 
@@ -617,9 +822,16 @@ Como evolução futura do projeto:
 ```
 
 ```
-# Autor
-## Thiago Faria
+## Autor
 
-```
+**Thiago Faria**
+
+Projeto desenvolvido como parte do Desafio Final de Engenharia de Dados.
+
+---
+## Licença
+Este projeto utiliza exclusivamente dados públicos disponibilizados pela Câmara dos Deputados e fontes públicas complementares.
+
+Todos os artefatos analíticos foram desenvolvidos para fins educacionais, estudos técnicos e demonstração de arquitetura de dados.
 
 
