@@ -8,6 +8,14 @@
 # Camada Bronze | Ingerir votos individuais dos deputados em votações
 # preservando granularidade máxima (fact table base).
 # Endpoint: /votacoes/{id}/votos
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por [id_votacao, id] (deputado + votação)
+#
+# Motivo: Votos são fatos granulares. Na primeira execução, sobrescrevemos para
+# começar limpo. Em execuções posteriores, usamos MERGE para evitar duplicação
+# ao reprocessar votações (períodos com sobreposição).
 # ============================================================
 
 # ============================================================
@@ -35,7 +43,15 @@ TABELA_ORIGEM = "desafio_final_t2.bronze.bronze_votacoes"
 TABELA_DESTINO = "desafio_final_t2.bronze.bronze_votacoes_votos"
 
 # ============================================================
-# 2. OBTÉM IDS DAS VOTAÇÕES PARA PROCESSAR
+# 2. CONTROLE DE PRIMEIRA CARGA
+# ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
+
+# ============================================================
+# 3. OBTÉM IDS DAS VOTAÇÕES PARA PROCESSAR
 # Recupera os IDs das votações previamente carregadas para enriquecimento dos dados com os votos individuais dos deputados.
 # ============================================================
 
@@ -61,14 +77,14 @@ log_info(
 
 
 # ============================================================
-# 3. CONTROLE DE ERROS
+# 4. CONTROLE DE ERROS
 # ============================================================
 
 lista_erros = []
 
 
 # ============================================================
-# 4. PROCESSAMENTO DOS VOTOS
+# 5. PROCESSAMENTO DOS VOTOS
 # Consulta o endpoint de votos para cada votação retornando o posicionamento individual dos deputados
 # ============================================================
 
@@ -126,7 +142,7 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
         # TRATAMENTO BRONZE
         # ====================================================
         for voto in dados:
-            voto["id_votacao"] = votacao_id
+            voto["id_votacao"] = id_votacao
             voto["source_endpoint_detail"] = endpoint_atual
             voto["raw_payload"] = json.dumps(voto, ensure_ascii=False)
 
@@ -203,19 +219,38 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
 
         # ============================================
         # ESCRITA DELTA
-        # Tabelas históricas modo= "append" porque representam fatos que crescem ao longo do tempo.
+        # Primeira carga: overwrite para começar limpo
+        # Subsequentes: MERGE para evitar duplicatas
         # ============================================
 
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo= "append",
-            particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo="overwrite",
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        else:
+            # Cargas subsequentes: MERGE para evitar duplicatas
+            # Chaves: id_votacao (votação) e id (deputado)
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id_votacao", "id"],
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        
+        primeira_carga = False
 
         log_info(
             f"Votacao {id_votacao} gravada com sucesso."
