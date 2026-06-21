@@ -8,6 +8,14 @@
 # Camada Bronze | Ingerir dados de presença de deputados em eventos parlamentares
 # mantendo fidelidade ao payload original da API da Câmara.
 # Endpoint: /eventos/{id}/deputados
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por [id_evento, id] (evento + deputado)
+#
+# Motivo: Presença é um fato granular. Na primeira execução, sobrescrevemos para
+# começar limpo. Em execuções posteriores, usamos MERGE para evitar duplicação
+# ao reprocessar eventos (períodos com sobreposição).
 # ============================================================
 
 # ============================================================
@@ -32,9 +40,16 @@ TIMEOUT = 30
 PIPELINE_VERSION = "1.0"
 BATCH_ID = str(uuid.uuid4())
 
+# ============================================================
+# 2. CONTROLE DE PRIMEIRA CARGA
+# ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
 
 # ============================================================
-# 2. OBTÉM IDS DOS EVENTOS
+# 3. OBTÉM IDS DOS EVENTOS
 # Extraímos eventos da camada Bronze para garantir consistência
 # ============================================================
 
@@ -58,14 +73,14 @@ log_info(
 
 
 # ============================================================
-# 3. CONTROLE DE ERROS
+# 4. CONTROLE DE ERROS
 # ============================================================
 
 lista_erros = []
 
 
 # ============================================================
-# 4. PROCESSAMENTO DOS EVENTOS
+# 5. PROCESSAMENTO DOS EVENTOS
 # ============================================================
 
 for contador, id_evento in enumerate(ids_eventos, start=1):
@@ -199,15 +214,33 @@ for contador, id_evento in enumerate(ids_eventos, start=1):
         )
 
         # ====================================================
-        # ESCRITA BRONZE (APPEND)
+        # ESCRITA DELTA
+        # Primeira carga: overwrite para começar limpo
+        # Subsequentes: MERGE para evitar duplicatas
         # ====================================================
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo="append",
-            particionar=True,
-            colunas_particao=["ano_ingestao", "mes_ingestao"]
-        )
+        
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo="overwrite",
+                particionar=True,
+                colunas_particao=["ano_ingestao", "mes_ingestao"]
+            )
+        else:
+            # Cargas subsequentes: MERGE para evitar duplicatas
+            # Chaves: id_evento (evento) e id (deputado)
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id_evento", "id"],
+                particionar=True,
+                colunas_particao=["ano_ingestao", "mes_ingestao"]
+            )
+        
+        primeira_carga = False
 
         log_info(
             f"Evento {id_evento} gravado com sucesso."
