@@ -7,6 +7,15 @@
 # BRONZE_VOTACOES
 # Camada Bronze | Votações da Câmara
 # Endpoint: /votacoes
+# 
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por ID (evita duplicatas)
+# 
+# Motivo: Votações são fatos históricos. Na primeira execução,
+# sobrescrevemos para começar limpo. Em execuções posteriores,
+# usamos MERGE para evitar duplicação quando processamos períodos
+# que podem ter sobreposição de datas.
 # ============================================================
 
 # ============================================================
@@ -184,28 +193,39 @@ while True:
 
         # ====================================================
         # DEFINIÇÃO DO MODO DE ESCRITA
+        # Primeira carga: overwrite (limpa a tabela)
+        # Subsequentes: MERGE (upsert por ID para evitar duplicatas)
         # ====================================================
 
-        modo_escrita = (
-            "overwrite"
-            if primeira_carga
-            else "append"
-        )
-
-        # ====================================================
-        # ESCRITA DELTA
-        # ====================================================
-
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo=modo_escrita,
-            particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            modo_escrita = "overwrite"
+            usar_merge = False
+            
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo=modo_escrita,
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        else:
+            # Cargas subsequentes: MERGE para evitar duplicatas
+            # Chave: ID da votação (é única no sistema)
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id"],
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
 
         primeira_carga = False
 
