@@ -8,6 +8,13 @@
 # Projeto Final - Engenharia de Dados
 # Camada Bronze | Ingerir frentes parlamentares da API da Câmara dos Deputados
 # preservando dados brutos para modelagem posterior.
+#
+# ESTRATÉGIA DE CARGA:
+# - 1ª Carga: OVERWRITE (cria tabela limpa)
+# - Cargas subsequentes: MERGE/UPSERT por ID (captura ciclo de vida)
+#
+# Motivo: Frentes parlamentares têm ciclo de vida (data criação/extinção).
+# MERGE permite capturar mudanças de status sem duplicação.
 # ============================================================
 
 # ============================================================
@@ -59,8 +66,12 @@ BATCH_ID = str(uuid.uuid4())
 TABELA_DESTINO = "desafio_final_t2.bronze.bronze_frentes"
 
 # ============================================================
-# 3. SCHEMA BRONZE (evita inferência)
+# 3. CONTROLE DE ESCRITA E SCHEMA
 # ============================================================
+
+primeira_carga = not spark.catalog.tableExists(
+    TABELA_DESTINO
+)
 
 SCHEMA_FRENTES = StructType([
     StructField("id", LongType(), True),
@@ -157,19 +168,43 @@ while True:
         )
 
         # ============================================
-        # ESCRITA DELTA
+        # DEFINIÇÃO DO MODO DE ESCRITA
+        # Primeira carga: overwrite
+        # Subsequentes: MERGE (upsert por ID)
         # ============================================
 
-        salvar_delta(
-            df=spark_df,
-            tabela=TABELA_DESTINO,
-            modo="append",
-            particionar=True,
-            colunas_particao=[
-                "ano_ingestao",
-                "mes_ingestao"
-            ]
-        )
+        if primeira_carga:
+            # Primeira carga: sobrescreve para começar limpo
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                modo="overwrite",
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+        else:
+            # Cargas subsequentes: MERGE para capturar mudanças
+            # Chave: ID da frente (é única no sistema)
+            salvar_delta(
+                df=spark_df,
+                tabela=TABELA_DESTINO,
+                usar_merge=True,
+                chaves_merge=["id"],
+                particionar=True,
+                colunas_particao=[
+                    "ano_ingestao",
+                    "mes_ingestao"
+                ]
+            )
+
+        primeira_carga = False
+
+        # ============================================
+        # ESCRITA DELTA
+        # ============================================
 
         log_info(
             f"Página {pagina} gravada com sucesso."
