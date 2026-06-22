@@ -1,9 +1,8 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
-# Databricks notebook source
 # ============================================================
 # SILVER - DIM_EVENTO
 # Projeto Final - Engenharia de Dados
@@ -177,23 +176,29 @@ df_dim_evento = (
 
 
 # ============================================================
-# 7. ESCRITA DELTA SILVER
+# 7. DEDUPLICAÇÃO E ESCRITA DELTA SILVER
 # ============================================================
+
+# Remover duplicatas mantendo o registro mais recente por nk_evento
+df_dim_evento_dedupe = (
+    df_dim_evento
+    .dropDuplicates(["nk_evento"])
+)
 
 if spark.catalog.tableExists(TABELA_DESTINO):
 
-    executar_merge(
-        df=df_dim_evento,
-        tabela_destino=TABELA_DESTINO,
-        condicao_merge="""
-            dest.nk_evento = orig.nk_evento
-        """
+    salvar_delta(
+        df=df_dim_evento_dedupe,
+        tabela=TABELA_DESTINO,
+        usar_merge=True,
+        chaves_merge=["nk_evento"]
     )
+
 
 else:
 
     (
-        df_dim_evento.write
+    df_dim_evento.write
         .format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
