@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
@@ -92,10 +92,9 @@ df_dim_fornecedor = (
 # atualização e inserção de registros sem recriação completa das tabelas.
 # ============================================================
 
-executar_merge(
+salvar_delta(
     df=df_dim_fornecedor,
-    tabela_destino=TABELA_DESTINO,
-    condicao_merge="""
-        dest.nk_fornecedor = orig.nk_fornecedor
-    """
+    tabela=TABELA_DESTINO,
+    usar_merge=True,
+    chaves_merge=["nk_fornecedor"]
 )
