@@ -1,8 +1,9 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 2
 # ============================================================
 # BRONZE_DEPUTADOS
 # Projeto Final - Engenharia de Dados
@@ -185,13 +186,13 @@ while True:
             salvar_delta(
                 df=spark_df,
                 tabela=TABELA_DESTINO,
-                usar_merge=True,
-                chaves_merge=["id"],
                 particionar=True,
                 colunas_particao=[
                     "ano_ingestao",
                     "mes_ingestao"
-                ]
+                ],
+                usar_merge=True,
+                chaves_merge=["id"]
             )
 
         primeira_carga = False
