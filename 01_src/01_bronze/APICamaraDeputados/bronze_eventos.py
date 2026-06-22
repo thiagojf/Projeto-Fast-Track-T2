@@ -1,8 +1,8 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
-# Databricks notebook source
+
 # ============================================================
 # BRONZE - EVENTOS
 # Camada Bronze | Ingerir eventos parlamentares da API da Câmara dos Deputados
