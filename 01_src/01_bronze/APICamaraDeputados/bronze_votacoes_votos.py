@@ -1,8 +1,10 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# DBTITLE 1,Carrega as funções, variáveis e classes para uso no notebook atual.
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
+# DBTITLE 1,Camada Bronze | Ingestão dos votos individuais dos deputados em votações
 # ============================================================
 # BRONZE_VOTACOES_VOTOS
 # Camada Bronze | Ingerir votos individuais dos deputados em votações
@@ -78,9 +80,11 @@ log_info(
 
 # ============================================================
 # 4. CONTROLE DE ERROS
+# Acumula mensagens e informações sobre erros ocorridos ao longo da execução,
+# permitindo geração de relatórios e análise posterior.
 # ============================================================
-
 lista_erros = []
+PIPELINE_NAME = "bronze_votacoes_votos"
 
 
 # ============================================================
@@ -203,6 +207,8 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
             )
 
             .select("dados.*")
+            # Extrai id do deputado para nível raiz (necessário para MERGE)
+            .withColumn("id_deputado", F.col("deputado_.id"))
 
         )
 
@@ -242,7 +248,7 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
                 df=spark_df,
                 tabela=TABELA_DESTINO,
                 usar_merge=True,
-                chaves_merge=["id_votacao", "id"],
+                chaves_merge=["id_votacao", "id_deputado"],
                 particionar=True,
                 colunas_particao=[
                     "ano_ingestao",
@@ -267,12 +273,39 @@ for contador, id_votacao in enumerate(id_votacao, start=1):
         lista_erros.append({
 
             "id_votacao": id_votacao,
-
             "endpoint": endpoint_atual,
-
+            "tipo_erro": type(e).__name__,
             "erro": str(e)
 
         })
-
         continue
 
+# ============================================================
+# Gravação de logs de erro
+# ============================================================
+
+if lista_erros:
+    df_erros = spark.createDataFrame(lista_erros)
+    df_erros = (
+        df_erros
+        .withColumn("data_execucao",F.current_timestamp())
+        .withColumn("pipeline",F.lit(PIPELINE_NAME))
+        .withColumn("batch_id",F.lit(BATCH_ID))
+        .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    )
+    salvar_delta(
+        df=df_erros,
+        tabela="desafio_final_t2.audit.erros_api",
+        modo="append"
+    )
+    log_info(
+        f"{len(lista_erros)} erros gravados na auditoria."
+    )
+    
+# ============================================================
+# 6. FINALIZAÇÃO
+# ============================================================
+
+log_info(
+    "Ingestão concluída com sucesso."
+)
