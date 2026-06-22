@@ -1,8 +1,9 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 2
 # ============================================================
 # BRONZE_FRENTES
 # Projeto Final - Engenharia de Dados
@@ -24,6 +25,8 @@
 import time
 import uuid
 import json
+
+from pyspark.sql.types import StructType, StructField, StringType, LongType
 
 
 # ============================================================
