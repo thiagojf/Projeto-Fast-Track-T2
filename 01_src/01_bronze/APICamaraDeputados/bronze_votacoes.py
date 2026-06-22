@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
@@ -44,6 +44,12 @@ PIPELINE_VERSION = "1.0"
 BATCH_ID = str(uuid.uuid4())
 
 TABELA_DESTINO = "desafio_final_t2.bronze.bronze_votacoes"
+
+# Acumula mensagens e informações sobre erros ocorridos ao longo da execução,
+# permitindo geração de relatórios e análise posterior.
+# ============================================================
+lista_erros = []
+PIPELINE_NAME = "bronze_votacoes"
 
 # ============================================================
 # 3. CONTROLE DE ESCRITA
@@ -243,7 +249,37 @@ while True:
             f"Erro na página {pagina}: {str(e)}"
         )
 
+        lista_erros.append({
+
+            "pagina": pagina,
+            "endpoint": ENDPOINT,
+            "tipo_erro": type(e).__name__,
+            "erro": str(e)
+
+        })
         raise
+
+# ============================================================
+# Gravação de logs de erro
+# ============================================================
+
+if lista_erros:
+    df_erros = spark.createDataFrame(lista_erros)
+    df_erros = (
+        df_erros
+        .withColumn("data_execucao",F.current_timestamp())
+        .withColumn("pipeline",F.lit(PIPELINE_NAME))
+        .withColumn("batch_id",F.lit(BATCH_ID))
+        .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    )
+    salvar_delta(
+        df=df_erros,
+        tabela="desafio_final_t2.audit.erros_api",
+        modo="append"
+    )
+    log_info(
+        f"{len(lista_erros)} erros gravados na auditoria."
+    )
 
 # ============================================================
 # 5. FINALIZAÇÃO

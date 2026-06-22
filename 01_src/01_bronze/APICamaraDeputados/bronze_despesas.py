@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
@@ -33,6 +33,7 @@ from pyspark.sql import functions as F
 BASE_URL = "https://dadosabertos.camara.leg.br/api/v2"
 
 # Endpoint dinâmico por deputado
+ENDPOINT_BASE = "/deputados"
 ENDPOINT_TEMPLATE = "/deputados/{id}/despesas"
 
 # Configurações de resiliência da API
@@ -53,6 +54,10 @@ BATCH_ID = str(uuid.uuid4())
 # Tabela destino Bronze
 TABELA_ORIGEM_DEPUTADOS = "desafio_final_t2.bronze.bronze_deputados"
 TABELA_DESTINO = "desafio_final_T2.bronze.bronze_despesas"
+
+# Acumula mensagens e informações sobre erros ocorridos ao longo da execução,
+# permitindo geração de relatórios e análise posterior.
+lista_erros = []
 
 # ============================================================
 # 2. OBTER IDS DOS DEPUTADOS
@@ -330,7 +335,38 @@ except Exception as e:
         f"Erro durante ingestão: {str(e)}"
     )
 
+    lista_erros.append({
+
+       "id_deputado": id_deputado,
+        "endpoint": endpoint_atual,
+        "tipo_erro": type(e).__name__,
+        "erro": str(e)
+
+        })
+
     raise
+
+# ============================================================
+# Gravação de logs de erro
+# ============================================================
+
+if lista_erros:
+    df_erros = spark.createDataFrame(lista_erros)
+    df_erros = (
+        df_erros
+        .withColumn("data_execucao",F.current_timestamp())
+        .withColumn("pipeline",F.lit("bronze_despesas"))
+        .withColumn("batch_id",F.lit(BATCH_ID))
+        .withColumn("pipeline_version", F.lit(PIPELINE_VERSION))
+    )
+    salvar_delta(
+        df=df_erros,
+        tabela="desafio_final_t2.audit.erros_api",
+        modo="append"
+    )
+    log_info(
+        f"{len(lista_erros)} erros gravados na auditoria."
+    )
 
 
 # ============================================================
