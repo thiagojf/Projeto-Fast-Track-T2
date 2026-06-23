@@ -396,48 +396,59 @@ Projeto-Fast-Track-T2
 
 ## Bronze
 
-1. bronze_deputados
-2. bronze_frentes
-3. bronze_frentes_membros
-4. bronze_eventos
-5. bronze_eventos_presenca
-6. bronze_tipo_evento
-7. bronze_despesas
-8. bronze_orgao
-9. bronze_orgaos_detalhe
-10. bronze_votacoes
-11. bronze_votacoes_votos
+1.	bronze_deputados
+2.	bronze_Frentes
+3.	bronze_frentes_membros
+4.	bronze_eventos
+5.	bronze_eventos_presenca       
+6.	bronze_tipo_evento    
+7.	bronze_despesas
+8.	bronze_orgao
+9.	bronze_orgaos_detalhe
+10.	bronze_votacoes
+11.	bronze_votacoes_votos
+
 
 ---
 
 ## Silver
 
-1. silver_dim_deputado
-2. silver_dim_frentes
-3. silver_bridge_frente_deputado
-4. silver_dim_tipo_evento
-5. silver_dim_evento
-6. silver_dim_orgao
-7. silver_bridge_evento_orgao
-8. silver_dim_data
-9. silver_despesas
-10. silver_dim_fornecedor
-11. silver_dim_categoria_despesa
+1.	silver_dim_deputados
+2.	silver_dim_frentes
+3.	silver_bridge_frente_deputado
+4.	silver_bridge_evento_orgao
+5.	silver_dim_tipo_evento
+6.	silver_dim_evento
+7.	silver_dim_orgao
+8.	silver_dim_data
+9.	silver_despesas
+10.	silver_dim_fornecedor
+11.	silver_dim_categoria_despesa
+12.	silver_dim_cpi
+13.	silver_dim_votacao
+
 
 ---
 
 ## Gold
 
-1. gold_frentes_membros
-2. gold_ihh_frentes
-3. gold_ranking_deputados
-4. gold_eventos
-5. gold_vw_eventos_futuros
-6. gold_densidade_eventos_semana
-7. gold_taxa_presenca_eventos
-8. gold_comparativo_periodo_eleitoral
-9. gold_fat_despesas
-10. gold_realtorio_top10_gastos_mensal
+1.	gold_frentes_membros
+2.	gold_ihh_frentes
+3.	gold_ranking_deputados
+4.	gold_eventos
+5.	gold_vw_eventos_futuros
+6.	gold_densidade_eventos_semana
+7.	gold_taxa_presenca_eventos  
+8.	gold_comparativo_periodo_eleitoral
+9.	gold_fat_despesas
+10.	gold_realtorio_top10_gastos_mensal
+11.	gold_engajamento_deputado
+12.	gold_engajamento_partido
+13.	gold_cpis
+14.	gold_frentes_votacoes
+15.	gold_frentes_alinhamento
+16.	gold_frentes_membros
+17.	gold_anomalias_despesas
 
 ---
 
