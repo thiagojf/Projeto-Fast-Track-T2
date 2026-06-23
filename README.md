@@ -484,7 +484,7 @@ Os principais desafios enfrentados durante o desenvolvimento foram:
 
 # Dicionário de Dados
 
- # gold.comparativo_periodo_eleitoral
+# gold.comparativo_periodo_eleitoral
 
 | Schema | Tabela | Posição | Nome Coluna | Tipo Dado |
 |---|---|---:|---|---|
