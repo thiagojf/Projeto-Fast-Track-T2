@@ -10,7 +10,6 @@ notebooks = [
     "/Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/01_src/01_bronze/APICamaraDeputados/bronze_despesas",
     "/Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/01_src/01_bronze/APICamaraDeputados/bronze_orgao",
     "/Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/01_src/01_bronze/APICamaraDeputados/bronze_orgaos_detalhe",
-
     "/Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/01_src/01_bronze/APICamaraDeputados/bronze_votacoes",
     "/Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/01_src/01_bronze/APICamaraDeputados/bronze_votacoes_votos"
 
