@@ -218,7 +218,8 @@ while True:
         log_error(
             f"Erro na página {pagina}: {str(e)}"
         )
-
+        # Falha intencional: preferimos falhar explicitamente
+        # a continuar com dados incompletos na camada Bronze.
         raise
         
 
