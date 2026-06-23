@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
@@ -26,7 +26,7 @@ PIPELINE_VERSION = "1.0"
 # Agrega métricas de engajamento dos deputados
 # por partido político
 # ============================================================
-df_gold_engajamento_deputado = spark.sql("""
+df_gold_engajamento_partido = spark.sql("""
 WITH base AS (
 
     SELECT

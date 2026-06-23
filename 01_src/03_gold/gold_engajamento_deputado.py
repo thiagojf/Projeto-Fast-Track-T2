@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/Desafio_Final_Compass_V2.1/99_Utils/common_utils
+# MAGIC %run /Workspace/Users/thiagofaria87@escoladotrabalhador40.com.br/GIT_Projeto-Fast-Track-T2/99_utils/common_utils
 
 # COMMAND ----------
 
@@ -175,5 +175,6 @@ df_gold_engajamento_deputado = (
 
 # COMMAND ----------
 
+# MAGIC %skip
 # MAGIC %sql
 # MAGIC select * from desafio_final_t2.gold.gold_engajamento_deputado
