@@ -24,7 +24,7 @@ import uuid
 import json
 
 from pyspark.sql import functions as F
-
+from pyspark.sql.functions import sha2, concat_ws, coalesce, lit
 
 # ============================================================
 # 1. CONFIGURAÇÕES
@@ -275,6 +275,21 @@ try:
 
         )
 
+        spark_df = spark_df.withColumn(
+            "sk_despesa",
+            sha2(
+                concat_ws("|",
+                    coalesce(F.col("nk_deputado").cast("string"), lit("")),
+                    coalesce(F.col("codDocumento").cast("string"), lit("")),
+                    coalesce(F.col("numDocumento"), lit("")),
+                    coalesce(F.col("dataDocumento"), lit("")),
+                    coalesce(F.col("valorLiquido").cast("string"), lit("")),
+                    coalesce(F.col("codLote").cast("string"), lit(""))
+                ),
+                256
+            )
+        )
+
         # ====================================================
         # AUDITORIA
         # ====================================================
@@ -312,7 +327,7 @@ try:
                 df=spark_df,
                 tabela=TABELA_DESTINO,
                 usar_merge=True,
-                chaves_merge=["nk_deputado", "ano_referencia", "codDocumento"],
+                chaves_merge=["sk_despesa"],
                 particionar=True,
                 colunas_particao=[
                     "ano_ingestao",
