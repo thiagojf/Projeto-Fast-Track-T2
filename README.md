@@ -178,13 +178,16 @@ Status: ✅ Entregue
 
 Tabelas:
 
-* gold_frentes
+* gold_frentes_membros
+* gold_ihh_frentes
+* gold_ranking_deputados
 
 Indicadores:
 
-* Quantidade de membros
-* Diversidade partidária
-* Índice de Herfindahl (IHH)
+* Membros por frente parlamentar
+* Diversidade partidária (Índice Herfindahl-Hirschman)
+* Ranking de deputados com participação em múltiplas frentes
+* Relação entre deputados, partidos e frentes
 ---
 ### Módulo 2 — Calendário Analítico de Eventos
 
@@ -193,12 +196,18 @@ Status: ✅ Entregue
 Tabelas:
 
 * gold_eventos
+* gold_taxa_presenca_eventos
+* gold_densidade_eventos_semana
+* gold_comparativo_periodo_eleitoral
+* gold_vw_eventos_futuros
 
 Indicadores:
 
-* Eventos por período
-* Eventos por órgão
-* Frequência parlamentar
+* Taxa de presença por deputado
+* Taxa de presença por tipo de evento
+* Comparativo antes/depois de períodos eleitorais
+* Densidade semanal de eventos
+* Eventos futuros agendados
 
 ---
 
@@ -213,9 +222,10 @@ Tabelas:
 
 Indicadores:
 
-* Percentual de alinhamento interno
+* Percentual de alinhamento das frentes em votações
 * Voto majoritário por frente
-* Ranking de alinhamento
+* Classificação de alinhamento (Alto, Médio e Baixo)
+* Média histórica de alinhamento por frente
 
 ---
 
@@ -225,14 +235,17 @@ Status: ✅ Entregue
 
 Tabelas:
 
-* gold_gastos_deputados
+* gold_fat_despesas
+* gold_anomalias_despesas
+* gold_relatorio_top10_gastos_mensal
 
 Indicadores:
 
 * Gastos por deputado
+* Gastos por partido
 * Gastos por fornecedor
-* Gastos por categoria
-* Detecção de anomalias utilizando Z-Score
+* Detecção de anomalias via Z-Score
+* Top 10 gastos mensais
 
 ---
 
@@ -247,9 +260,9 @@ Tabelas:
 
 Indicadores disponíveis:
 
-* Cadastro de CPIs
-* Quantidade de CPIs
-* Tipos de órgãos CPI
+* Catálogo consolidado de CPIs
+* Informações de instalação e encerramento quando disponíveis
+* Dados estruturados para análises futuras
 
 ---
 
@@ -264,10 +277,11 @@ Tabelas:
 
 Indicadores:
 
+* Score de engajamento parlamentar
 * Participação em eventos
 * Participação em votações
-* Ranking de engajamento
-* Score de engajamento por partido
+* Distribuição de votos (Sim, Não, Abstenção, Obstrução)
+* Ranking de engajamento por partido
 
 ## Principais Indicadores
 
