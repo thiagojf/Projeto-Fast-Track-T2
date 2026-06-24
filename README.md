@@ -395,10 +395,10 @@ Responsável por centralizar funções reutilizáveis utilizadas em todos os not
 | log_error| Logs de erro |
 
 ## Benefícios:
-Padronização
-Reuso
-Menor duplicação de código
-Manutenção simplificada
+* Padronização
+* Reuso
+* Menor duplicação de código
+* Manutenção simplificada
 
 ---
 # Estrutura de Diretórios
