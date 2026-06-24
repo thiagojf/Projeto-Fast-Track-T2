@@ -275,6 +275,10 @@ try:
 
         )
 
+        # Gera a chave substituta (sk_despesa) aplicando SHA-256 sobre a
+        # concatenação dos campos que identificam unicamente uma despesa.
+        # Valores nulos são substituídos por string vazia para garantir
+        # consistência na geração do hash.
         spark_df = spark_df.withColumn(
             "sk_despesa",
             sha2(
@@ -282,8 +286,8 @@ try:
                     coalesce(F.col("nk_deputado").cast("string"), lit("")),
                     coalesce(F.col("codDocumento").cast("string"), lit("")),
                     coalesce(F.col("numDocumento"), lit("")),
-                    coalesce(F.col("dataDocumento"), lit("")),
-                    coalesce(F.col("valorLiquido").cast("string"), lit("")),
+                    coalesce(F.date_format("dataDocumento", "yyyy-MM-dd"), lit(""))
+                    coalesce(F.format_number("valorLiquido", 2), lit("")),
                     coalesce(F.col("codLote").cast("string"), lit(""))
                 ),
                 256
