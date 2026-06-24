@@ -379,8 +379,29 @@ Separação clara entre:
 Como as tabelas Gold são derivadas das Silver, optou-se pela reconstrução completa para evitar inconsistências.
 
 ---
-# Estrutura de Diretórios
+# Utilitários Compartilhados (99_utils)
 
+Responsável por centralizar funções reutilizáveis utilizadas em todos os notebooks.
+
+## Principais funções:
+| Função	                           | Objetivo|
+| ---------------------------------- | --------------------- |
+| get_api_data| Consumo resiliente da API |
+| salvar_delta| Escrita Delta Lake |
+| executar_merge| Operações UPSERT |
+| adicionar_auditoria| Campos de auditoria |
+| log_info| Logs informativos |
+| log_warning| Logs de alerta |
+| log_error| Logs de erro |
+
+## Benefícios:
+Padronização
+Reuso
+Menor duplicação de código
+Manutenção simplificada
+
+---
+# Estrutura de Diretórios
 ```text
 Projeto-Fast-Track-T2
 │
@@ -403,9 +424,7 @@ Projeto-Fast-Track-T2
 │
 └── README.md
 ```
-
 ---
-
 # Ordem de Execução dos Notebooks
 
 ## Bronze
